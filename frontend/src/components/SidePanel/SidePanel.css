@@ -1,0 +1,116 @@
+.side-panel {
+    width: 28rem;
+    position: fixed;  /* 고정 위치 */
+    top: 0;          /* 화면 최상단에 위치 */
+    right: -28rem;  
+    background: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* margin: 16px 0; */
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 16px 16px 0 16px;
+    z-index: 1000;
+    transition: right 0.3s ease; /* 부드러운 전환 효과 */
+  }
+
+  .side-panel.open {
+    right: 0;
+  }
+
+  .drawer-toggle {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  
+  .drawer-toggle:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .search-container {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  
+  .station-info-container {
+    flex: 1;
+    /* padding: 16px; */
+    overflow-y: auto;
+  }
+  
+  .station-header {
+    margin-bottom: 24px;
+  }
+  
+  .station-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+  }
+  
+  .line-info {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .line-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #1976d2;
+    color: white;
+    font-size: 12px;
+  }
+  
+  .arrival-info {
+    margin-top: 24px;
+  }
+  
+  .arrival-info h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .arrival-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .arrival-item {
+    padding: 12px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .direction {
+    font-weight: 500;
+  }
+  
+  .time {
+    color: #1976d2;
+    font-weight: 500;
+  }

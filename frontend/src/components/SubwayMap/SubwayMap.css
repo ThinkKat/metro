@@ -1,0 +1,54 @@
+.subway-map-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    background-color: white;
+    cursor: grab;
+    /* 텍스트 선택 방지 */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* drawer가 열려있을 때 */
+.subway-map-container.drawer-open {
+    width: calc(100% - 28rem);
+  }
+
+.subway-map-container:active {
+    cursor: grabbing;
+}
+
+.station-info {
+    position: absolute;
+    background-color: white;
+    font-size: large;
+    font-weight: 600;
+    z-index: 1;
+}
+
+.svg-wrapper {
+    /* position: absolute; */
+    width: 100%;
+    height: 100%;
+    transition: transform 0.1s ease-out;
+    /* SVG 내부 텍스트 선택 방지 */
+    pointer-events: none;
+    transition: transform 0.3s ease-out;
+}
+
+.svg-wrapper * {
+    pointer-events: auto;
+}
+
+.subway-map-container svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* SVG 비율 유지 */
+}
+
+svg .station {
+    cursor: pointer;
+}

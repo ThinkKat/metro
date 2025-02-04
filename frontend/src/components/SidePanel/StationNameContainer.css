@@ -1,0 +1,67 @@
+/* 기존 CSS에 추가 */
+.station-line-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 48rem;  /* max-w-3xl */
+    border: 4px solid white;
+}
+
+.adjacent-station {
+    flex: 1;
+    display: flex;
+    padding: 8px 16px;  /* px-4 py-2 */
+    color: white;
+    font-size: 0.875rem;  /* text-sm */
+    font-weight: 600;  /* font-semibold */
+    /* z-index: -1;  -z-10 */
+    cursor: pointer;
+}
+
+.adjacent-station.left {
+    justify-content: flex-start;
+}
+
+.adjacent-station.right {
+    justify-content: flex-end;
+}
+
+.station-name-text {
+    margin-right: 8px;  /* mr-2 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.current-station {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-radius: 9999px;  /* rounded-full */
+    padding: 8px 16px;  /* px-4 py-2 */
+    min-width: 12rem;  /* min-w-48 */
+    border: 4px solid;
+    background-color: white;
+    margin: 0 -5px;  /* mx-[-5px] */
+    z-index: 1;
+}
+
+.station-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 9999px;
+    width: 3rem;  /* w-12 */
+    height: 3rem;  /* h-12 */
+    color: white;
+}
+
+.station-name {
+    flex: 1;
+    text-align: center;
+    font-size: 1.25rem;  /* text-xl */
+    font-weight: 800;  /* font-extrabold */
+    margin: 0 1.25rem;  /* ml-5 mr-5 */
+}

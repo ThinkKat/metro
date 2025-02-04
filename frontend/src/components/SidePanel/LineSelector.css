@@ -1,0 +1,28 @@
+/* 기존 CSS에 추가 */
+.line-selector {
+    display: flex;
+    justify-content: flex-start;
+    gap: 4px;  /* space-x-1 대체 */
+    padding: 16px;  /* p-4 대체 */
+  }
+  
+  .line-badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 60px;  /* min-w-20 대체 */
+    padding: 4px 8px;  /* px-2 py-1 대체 */
+    font-size: 12px;  /* text-xs 대체 */
+    border-radius: 9999px;  /* rounded-full 대체 */
+    border-width: 3px;  /* border-3 대체 */
+    border-style: solid;
+    font-weight: bold;  /* font-bold 대체 */
+    cursor: pointer;
+    transition: opacity 0.2s; 
+  }
+
+  
+  
+  .line-badge:hover {
+    opacity: 0.8;
+  }

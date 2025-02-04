@@ -1,0 +1,52 @@
+#root {
+  max-width: 100%;
+  text-align: center;
+}
+
+body {
+  overflow: hidden;
+  margin: 0;
+  height: 100vh;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header {
+  flex-shrink: 0;
+  height: 60px;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1440px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;  /* 남은 공간 모두 차지 */
+  min-height: 0;  /* flex 아이템 내부 스크롤을 위해 필요 */
+  overflow: hidden;  /* 메인 영역 스크롤 방지 */
+}
+
+/* .subway-map-container {
+  flex: 1;
+  height: 100%;
+} */
