@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse 
 
 from packages.db_manager import DBManager
 from packages.timetable_db_manager import TimetableDBManager
@@ -9,21 +9,21 @@ from packages.get_realtime_information import get_realtime_line_data, get_realti
 from packages.data_model import StationSearchbar, Station, RealtimeLine, SubwayData, RealtimeData
 
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # React 앱의 URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
+app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="dist")
 timetable_db_manager = TimetableDBManager()
 
-@app.get("/")
-async def home() -> dict:    
+@app.get("/", response_class=FileResponse)
+async def home():
+    return FileResponse("./static/dist/index.html")
+
+@app.get("/subways")
+async def subways() -> dict:    
     return {"description": "This is the API for subway data"}
+
+# Serve metro map svg file
+@app.get("/subways/map", response_class=FileResponse)
+async def get_metro_map():
+    return FileResponse("./static/seoul_metro_map_test.svg")
 
 @app.get("/subways/search/stations")
 async def get_station_information() -> list[StationSearchbar]:
@@ -68,7 +68,6 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
         return {
             "error": "There exists no realtime information.",
             "station_public_code": station_public_code
-            
         }
     
     line_info = timetable_db_manager.get_line_info(station_info["line_id"])

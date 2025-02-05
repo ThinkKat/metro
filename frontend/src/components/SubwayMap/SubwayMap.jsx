@@ -17,7 +17,7 @@ const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStation
   useEffect(() => {
     const fetchSvg = async () => {
       try {
-        const response = await fetch('http://localhost:8000/static/seoul_metro_map_test.svg');
+        const response = await fetch('/subways/map');
         const svgText = await response.text();
         setSvgContent(svgText);
 

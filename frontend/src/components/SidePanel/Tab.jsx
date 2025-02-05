@@ -8,7 +8,7 @@ const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => {
 
     const handleRealtimeRefresh = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/subways/information/realtimes/${stationInformation.station.station_public_code}`);
+            const response = await fetch(`/subways/information/realtimes/${stationInformation.station.station_public_code}`);
             if (!response.ok) throw new Error('Failed to fetch realtime data');
             
             const data = await response.json();

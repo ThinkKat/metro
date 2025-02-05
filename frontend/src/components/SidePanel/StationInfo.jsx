@@ -14,7 +14,7 @@ const StationInfo = ({ stationPublicCode, setStationPublicCode }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`http://127.0.0.1:8000/subways/information/${stationPublicCode}`); 
+                const response = await fetch(`/subways/information/${stationPublicCode}`); 
                 const data = await response.json();
                 // console.log(data)
                 setstationInformation(data); // 전체 데이터를 상태로 저장

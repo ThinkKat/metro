@@ -12,7 +12,7 @@ const SearchBar = ({stationPublicCode, setStationPublicCode}) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/subways/search/stations");
+        const response = await fetch("/subways/search/stations");
         const data = await response.json();
         setDropdownData(data);
         setFilteredData(data);
