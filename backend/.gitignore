@@ -1,6 +1,0 @@
-.venv
-**/.DS_Store
-db/
-**/__pycache__/
-**/config.py
-static/
