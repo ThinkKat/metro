@@ -38,7 +38,7 @@ const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => {
 
         if (tab === "realTime") {
             // 컴포넌트 마운트 시 즉시 첫 새로고침
-            // handleRefreshClick();
+            handleRefreshClick();
 
             // 15초마다 새로고침
             intervalId = setInterval(() => {
