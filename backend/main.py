@@ -1,3 +1,4 @@
+import os
 import logging
 
 from fastapi import FastAPI
@@ -13,7 +14,7 @@ from packages.data_model import StationSearchbar, Station, RealtimeLine, SubwayD
 logger1 = logging.getLogger("uvicorn.error")
 logger2 = logging.getLogger("uvicorn.access")
 
-fh = logging.FileHandler('./log/test.log', mode='a')
+fh = logging.FileHandler('./log/fastapi.log', mode='a')
 # create formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 # add formatter to fh
@@ -26,9 +27,15 @@ app = FastAPI()
 app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="dist")
 timetable_db_manager = TimetableDBManager()
 
-@app.get("/", response_class=FileResponse)
-async def home():
-    return FileResponse("./static/dist/index.html")
+if os.path.exists("./static/dist"):
+    app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="dist")
+    @app.get("/", response_class=FileResponse)
+    async def home():
+        return FileResponse("./static/dist/index.html")
+else:
+    @app.get("/")
+    async def home():
+        return {"hi":"hi"}
 
 @app.get("/subways")
 async def subways() -> dict:  
