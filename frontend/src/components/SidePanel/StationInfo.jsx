@@ -50,7 +50,7 @@ const StationInfo = ({ stationPublicCode, setStationPublicCode }) => {
         </div> :
         <div className="station-info-container no-station">
             <div className="station-info-text">
-                역을 검색하세요.
+                노선도에서 역을 선택하거나 역을 검색하세요.
             </div>
         </div>
     );

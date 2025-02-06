@@ -200,6 +200,8 @@ const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStation
     setStationPublicCode(stationPublicCode);
     // 중앙 정렬
     centerOnElement(station);
+    // 역 정보 open
+    setIsDrawerOpen(true);
   };
 
   const centerOnElement = (element) => {
