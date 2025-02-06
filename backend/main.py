@@ -1,12 +1,26 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse 
+from fastapi.responses import FileResponse
 
 from packages.db_manager import DBManager
 from packages.timetable_db_manager import TimetableDBManager
 from packages.get_subway_information import get_subway_data
 from packages.get_realtime_information import get_realtime_line_data, get_realtime_station_data
 from packages.data_model import StationSearchbar, Station, RealtimeLine, SubwayData, RealtimeData
+
+logger1 = logging.getLogger("uvicorn.error")
+logger2 = logging.getLogger("uvicorn.access")
+
+fh = logging.FileHandler('./log/test.log', mode='a')
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# add formatter to fh
+fh.setFormatter(formatter)
+
+logger1.addHandler(fh)
+logger2.addHandler(fh)
 
 app = FastAPI()
 app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="dist")
@@ -17,7 +31,7 @@ async def home():
     return FileResponse("./static/dist/index.html")
 
 @app.get("/subways")
-async def subways() -> dict:    
+async def subways() -> dict:  
     return {"description": "This is the API for subway data"}
 
 # Serve metro map svg file
@@ -89,3 +103,6 @@ async def get_realtimes_data_by_public_code(line_id: int) -> RealtimeLine|dict:
     line_info = timetable_db_manager.get_line_info(line_id)
     realtime_line_data = get_realtime_line_data(line_info["line_name"])
     return realtime_line_data
+
+if __name__ == "__main__":
+    pass
