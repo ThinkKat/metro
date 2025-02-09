@@ -17,22 +17,24 @@ class IntervalProcess:
         return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
         
     def get_data(self):
-        while self.is_loop:
-            print(f"------------------{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}------------------")
-            start = time.time()
-            self.data = get_realtime_all_stations_json_from_api()
-
-            # New data hashmap
-            new_data_hashmap = {}
-            for d in self.data:
-                station_id = int(d["statnId"])
-                if station_id not in new_data_hashmap:
-                    new_data_hashmap[station_id] = [d]
-                else:
-                    new_data_hashmap[station_id].append(d)
-            self.data_hashmap = new_data_hashmap
-                    
+        while True:
             self.is_loop = self.check_time()
+            if self.is_loop:
+                print(f"------------------{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}------------------")
+                start = time.time()
+                self.data = get_realtime_all_stations_json_from_api()
+
+                # New data hashmap
+                new_data_hashmap = {}
+                for d in self.data:
+                    station_id = int(d["statnId"])
+                    if station_id not in new_data_hashmap:
+                        new_data_hashmap[station_id] = [d]
+                    else:
+                        new_data_hashmap[station_id].append(d)
+                self.data_hashmap = new_data_hashmap
+            else:
+                self.data_hashmap = {}
             time.sleep(self.interval)
             
     def start(self):
