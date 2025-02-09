@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import MetroMap from "../../assets/seoul_metro_map_test_compress.svg"
 import './SubwayMap.css';
 
 const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStationPublicCode}) => {
@@ -17,25 +18,9 @@ const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStation
   useEffect(() => {
     const fetchSvg = async () => {
       try {
-        const response = await fetch('/subways/map');
+        const response = await fetch(MetroMap);
         const svgText = await response.text();
         setSvgContent(svgText);
-
-        // SVG 문자열을 파싱하여 DOM 객체로 변환
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
-        const svgElement = svgDoc.documentElement;
-
-        // viewBox 속성 설정
-        // viewBox="x y width height" 형식
-        // x, y는 시작점, width, height는 보여질 영역의 크기
-        svgElement.setAttribute('viewBox', '0 0 3600 2500');
-        
-        // 수정된 SVG를 문자열로 변환
-        const serializer = new XMLSerializer();
-        const modifiedSvgText = serializer.serializeToString(svgElement);
-        
-        setSvgContent(modifiedSvgText);
       } catch (error) {
         console.error('SVG 로딩 실패:', error);
       }
@@ -50,7 +35,7 @@ const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStation
       const svgWrapper = containerRef.current.querySelector('.svg-wrapper');
       if (svgWrapper) {
         const stations = svgWrapper.querySelectorAll('.station');
-        console.log('찾은 역 요소 수:', stations.length);
+        // console.log('찾은 역 요소 수:', stations.length);
         
         stations.forEach(station => {
           station.addEventListener('click', (e) => {
@@ -123,23 +108,7 @@ const SubwayMap = ({isDrawerOpen, setIsDrawerOpen, stationPublicCode, setStation
       startY: e.clientY - prev.y
     }));
   };
-
-//   const canDrag = () => {
-//     const container = containerRef.current;
-//     if (!container) return false;
-
-//     const svgWrapper = container.querySelector('.svg-wrapper');
-//     if (!svgWrapper) return false;
-
-//     // SVG의 실제 크기 계산
-//     const svgWidth = svgWrapper.offsetWidth * transform.scale;
-//     const svgHeight = svgWrapper.offsetHeight * transform.scale;
-//     const containerRect = container.getBoundingClientRect();
-
-//     // SVG가 컨테이너보다 크면 드래그 가능
-//     return svgWidth > containerRect.width || svgHeight > containerRect.height;
-//   };
-
+  
   // 드래그 제한 범위 설정
   const getBoundaries = () => {
     const container = containerRef.current;
