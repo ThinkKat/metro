@@ -4,7 +4,6 @@ import requests
 
 from .db_manager import DBManager
 from .data_model import Station, RealtimeRow, RealtimeLine, RealtimeStation
-from .config import API_KEY
 
 """ 
     Realtime API
@@ -179,17 +178,11 @@ def convert_train_status(train_status: str) -> str:
 
 
 def get_realtime_line_data(line_name: str) -> RealtimeLine:
-    # api_key_db_manager = DBManager("db/api_key.db")
-    # row = api_key_db_manager.execute("SELECT key, count FROM api_keys WHERE count < max_count LIMIT 1").fetchone()
-    # if row is None:
-    #     return {
-    #         "error": "API key usage is over max count"
-    #     }
+    api_key_db_manager = DBManager("db/api_key.db")
+    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
+    key = row[0]
     
-    # key = row[0]
-    
-    json = get_realtimes_json_by_line_name(API_KEY, line_name)
-    row = api_key_db_manager.transaction("UPDATE api_keys SET count = (SELECT count FROM api_keys WHERE key = :key) + 1 WHERE key = :key", {"key": key})
+    json = get_realtimes_json_by_line_name(key, line_name)
     place = []
     if json is None:
         return {
@@ -211,16 +204,11 @@ def get_realtime_line_data(line_name: str) -> RealtimeLine:
     return realtime_line
 
 def get_realtime_station_data(line_id: int, station_name: str, up_down_to_direction: dict) -> RealtimeStation:
-    # api_key_db_manager = DBManager("db/api_key.db")
-    # row = api_key_db_manager.execute("SELECT key, count FROM api_keys WHERE count < max_count LIMIT 1").fetchone()
-    # if row is None:
-    #     return {
-    #         "error": "API key usage is over max count"
-    #     }
-    # key = row[0]
+    api_key_db_manager = DBManager("db/api_key.db")
+    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
+    key = row[0]
     
-    json = get_realtimes_json_by_station_name(API_KEY, station_name)
-    row = api_key_db_manager.transaction("UPDATE api_keys SET count = (SELECT count FROM api_keys WHERE key = :key) + 1 WHERE key = :key", {"key": key})
+    json = get_realtimes_json_by_station_name(key, station_name)
     if json is None:
         return {
             "error": "There is no data"
@@ -248,18 +236,15 @@ def get_realtime_station_data(line_id: int, station_name: str, up_down_to_direct
     return realtime_station
 
 if __name__ == "__main__":
-    
-    # api_key_db_manager = DBManager("db/api_key.db")
-    # row = api_key_db_manager.execute("SELECT key, count FROM api_keys WHERE count < max_count LIMIT 1").fetchone()
-    # key = row[0]
-    # print(f"key count: {row[1]}")
+    api_key_db_manager = DBManager("db/api_key.db")
+    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
+    key = row[0]
     
     line_name = "신분당선"
     station_name = "응암순환(상선)"
     line_id = "1006"
     
-    json = get_realtimes_json_by_line_name(API_KEY, line_name)
-    row = api_key_db_manager.transaction("UPDATE api_keys SET count = (SELECT count FROM api_keys WHERE key = :key) + 1 WHERE key = :key", {"key": key})
+    json = get_realtimes_json_by_line_name(key, line_name)
     
     place = []
     for j in json: 
@@ -275,13 +260,8 @@ if __name__ == "__main__":
         place.append(realtime_line_row)
         
     realtime_line = RealtimeLine(place = place)
-    print(realtime_line)
     
-    # for j in json: 
-    #     if j["statnNm"] == "회기":
-    #         print(j)
-    
-    json = get_realtimes_json_by_station_name(API_KEY, station_name)
+    json = get_realtimes_json_by_station_name(key, station_name)
     row = api_key_db_manager.transaction("UPDATE api_keys SET count = (SELECT count FROM api_keys WHERE key = :key) + 1 WHERE key = :key", {"key": key})
     
     realtime_station_data = {"left": [], "right": []}
@@ -308,6 +288,6 @@ if __name__ == "__main__":
     
     print("left", len(realtime_station_data["left"]), "right", len(realtime_station_data["right"]))
     
-    realtime_station = RealtimeStation(**realtime_station_data)
+    realtime_station = RealtimeStsation(**realtime_station_data)
     print(realtime_station.left)
     print(realtime_station.right)
