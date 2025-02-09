@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 import uvicorn
 
-from packages.config import DEV, INTERVAL
+from packages.config import INTERVAL
 from packages.db_manager import DBManager
 from packages.timetable_db_manager import TimetableDBManager
 from packages.get_subway_information import get_subway_data
