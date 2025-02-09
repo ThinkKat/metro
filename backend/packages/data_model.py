@@ -51,8 +51,8 @@ class RealtimeStation(BaseModel):
     right: List[RealtimeRow]
     
 class RealtimeData(BaseModel):
-    line: RealtimeLine
-    station: RealtimeStation
+    line: Optional[RealtimeLine] = None
+    station: Optional[RealtimeStation] = None
 
 class TimetableRow(BaseModel):
     train_id: str
