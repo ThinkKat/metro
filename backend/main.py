@@ -12,18 +12,6 @@ from packages.realtime_thread import IntervalProcess
 from packages.get_realtime_information import get_realtime_line_data, get_realtime_station_json_from_api, get_realtime_station_data
 from packages.data_model import StationSearchbar, Station, RealtimeLine, SubwayData, RealtimeData
 
-logger1 = logging.getLogger("uvicorn.error")
-logger2 = logging.getLogger("uvicorn.access")
-
-fh = logging.FileHandler('./log/fastapi.log', mode='a')
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# add formatter to fh
-fh.setFormatter(formatter)
-
-logger1.addHandler(fh)
-logger2.addHandler(fh)
-
 app = FastAPI()
 
 # Station information from sqlite db

@@ -1,8 +1,11 @@
+import logging
 import threading
 import time
 from datetime import datetime
 
 from packages.get_realtime_information import get_realtime_all_stations_json_from_api
+
+logger = logging.getLogger("realtime-interval")
 
 class IntervalProcess:
     def __init__(self, interval: int):
@@ -20,7 +23,7 @@ class IntervalProcess:
         while True:
             self.is_loop = self.check_time()
             if self.is_loop:
-                print(f"------------------{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}------------------")
+                logger.info("Get realtime data for all stations")
                 start = time.time()
                 self.data = get_realtime_all_stations_json_from_api()
 
@@ -40,7 +43,6 @@ class IntervalProcess:
     def start(self):
         t = threading.Thread(target = self.get_data)
         t.start()
-        print(t.ident)
         
             
 if __name__ == "__main__":

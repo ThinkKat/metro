@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 import requests
@@ -10,6 +11,8 @@ from .data_model import Station, RealtimeRow, RealtimeLine, RealtimeStation
     요청 1: 역명 -> 도착정보
     요청 2: 호선 -> 위치정보
 """
+
+logger = logging.getLogger("realtimes")
 
 # Make endpoint
 def make_endpoint(base_url, params):
@@ -34,7 +37,7 @@ def make_endpoint(base_url, params):
         return url
         
     else:
-        print(f'The type of params is {type(params)}')
+        logger.error(f'The type of params is {type(params)}')
 
 
 # GET request to open api 
@@ -58,12 +61,13 @@ def request_get(url):
             return response
         else :
             # status code != 200 is error
-            print(f'The response status code is {status_code}')
+            logger.error(f'The response status code is {status_code}')
             
     except Exception as err:
-        print('url:', url, flush = True)
+        logger.error('url:', url)
         import traceback
-        traceback.print_exc()
+        tb = traceback.format_exc()
+        logger.error(tb)
           
     # Return the None when the status code is not 200
     return None
@@ -81,16 +85,16 @@ def parse_realtimes_response(response):
     keys = list(json.keys())
 
     if 'code' in keys:
-        print(f"There is some error. Error code is {json['code']}. {json['message']}")
+        logger.error(f"There is some error. Error code is {json['code']}. {json['message']}")
         data = None
     else:
         error = json[keys[0]]
         if error['code'] == 'INFO-000':
             # If code is 'INFO-000', there is no issue.
-            print("Success to get data")
+            logger.info("Success to get data")
             data = json[keys[1]]
         else:
-            print(f"There is some error. Error code is {error['code']}. {error['message']}")
+            logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
             data = None
 
     return data
@@ -251,7 +255,6 @@ def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: di
     realtime_station_data = {"left": [], "right": []}
     for j in json: 
         if int(j["subwayId"]) == line_id:
-            # print(j)
             realtime_station_row = RealtimeRow(
                 train_id = j["btrainNo"],
                 last_station_name = j["bstatnNm"],
