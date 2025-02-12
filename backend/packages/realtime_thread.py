@@ -3,12 +3,13 @@ import threading
 import time
 from datetime import datetime
 
-from packages.get_realtime_information import get_realtime_all_stations_json_from_api
+from packages.get_realtime_information import RealtimeInformation
 
 logger = logging.getLogger("realtime-interval")
 
 class IntervalProcess:
     def __init__(self, interval: int):
+        self.realtime_information = RealtimeInformation()
         self.interval = interval # interval second
         self.data = None
         self.data_hashmap = {}
@@ -24,8 +25,7 @@ class IntervalProcess:
             self.is_loop = self.check_time()
             if self.is_loop:
                 logger.info("Get realtime data for all stations")
-                start = time.time()
-                self.data = get_realtime_all_stations_json_from_api()
+                self.data = self.realtime_information.get_realtime_data("realtimeStationArrival/ALL")
 
                 # New data hashmap
                 new_data_hashmap = {}

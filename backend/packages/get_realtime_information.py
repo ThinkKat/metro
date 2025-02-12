@@ -4,44 +4,25 @@ from datetime import datetime
 import requests
 
 from .db_manager import DBManager
-from .data_model import Station, RealtimeRow, RealtimeLine, RealtimeStation
+from .data_model import RealtimeRow, RealtimeLine, RealtimeStation
 
 """ 
     Realtime API
     요청 1: 역명 -> 도착정보
     요청 2: 호선 -> 위치정보
+    
+    1. utils (Functions to use after requesting to realtime data api)
+      - parse_realtimes_response
+    2. request to realtime data api
+      - make_endpoint
+      - request_get
+    3. postprocess
 """
 
 logger = logging.getLogger("realtimes")
 
-# Make endpoint
-def make_endpoint(base_url, params):
-    """
-    Parameters:
-    base_url(str): base_url
-    params(list or dict): params of API, 
-                          list: path parameters(the order of elements must be checked), 
-                          dict: query parameters
-    
-    Returns:
-    url endpoint
-    """
-    if isinstance(params, list):
-        params_str = '/'.join([str(p) for p in params])
-        url = f'{base_url}/{params_str}'
-        return url
-    
-    elif isinstance(params, dict):
-        params_str = '&'.join([f'{key}={params[key]}' for key in params.key()])
-        url = f'{base_url}?{params_str}'
-        return url
-        
-    else:
-        logger.error(f'The type of params is {type(params)}')
-
-
 # GET request to open api 
-def request_get(url):
+def request_get(url: str) -> requests.models.Response|None:
     """ Get the data using api
     
     Parameters:
@@ -72,189 +53,90 @@ def request_get(url):
     # Return the None when the status code is not 200
     return None
 
-def parse_realtimes_response(response):
-    """
-    Parameters: 
-    response (requests.Response) : response for request_get() 
+class RealtimeInformation:
+    def __init__(self):
+        self.api_key = self.get_key()
+        self.base_url = 'http://swopenapi.seoul.go.kr/api/subway'
+        self.train_status = {
+            "0": "진입", "1": "도착", "2": "출발", "3": "전역출발", "4": "전역진입", "5": "전역도착", "99": "운행중"
+        }
     
-    Return: 
-    data(json) or None
-    """
-    # Check errorMessage
-    json = response.json()
-    keys = list(json.keys())
+    def get_key(self) -> str:
+        api_key_db_manager = DBManager("db/api_key.db")
+        row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
+        return row[0]
+    
+    # Get json data 
+    def get_realtime_data(self, api_name: str, name: str = None) -> dict|None:
+        url = self.get_url(api_name, name)
+        response = self.request_to_api(url)
+        data = self.parse_response(response)
+        return data        
+    
+    # Get endpoint
+    def get_url(self, api_name: str, name: str = None) -> str:
+        if api_name == "realtimePosition": return f"{self.base_url}/{self.api_key}/json/realtimePosition/0/1000/{name}"
+        elif api_name == "realtimeStationArrival": return f"{self.base_url}/{self.api_key}/json/realtimeStationArrival/0/1000/{name}"
+        elif api_name == "realtimeStationArrival/ALL": return f"{self.base_url}/{self.api_key}/json/realtimeStationArrival/ALL"
+        else: raise Exception(f"There isn't no api named {api_name}")
+    
+    def request_to_api(self, url: str) -> requests.models.Response|None:
+        response = request_get(url)
+        return response
+    
+    def parse_response(self, response: requests.models.Response|None) -> dict|None:
+        """
+        Parameters: 
+        response (requests.Response) : response for request_get() 
+        
+        Return: 
+        data(json) or None
+        """
+        # response error
+        if response is None: return None 
+        
+        # Check errorMessage
+        json = response.json()
+        keys = list(json.keys())
 
-    if 'code' in keys:
-        logger.error(f"There is some error. Error code is {json['code']}. {json['message']}")
-        data = None
-    else:
-        error = json[keys[0]]
-        if error['code'] == 'INFO-000':
-            # If code is 'INFO-000', there is no issue.
-            logger.info("Success to get data")
-            data = json[keys[1]]
-        else:
-            logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
+        if 'code' in keys:
+            logger.error(f"There is some error. Error code is {json['code']}. {json['message']}")
             data = None
+        else:
+            error = json[keys[0]]
+            if error['code'] == 'INFO-000':
+                # If code is 'INFO-000', there is no issue.
+                logger.info("Success to get data")
+                data = json[keys[1]]
+            else:
+                logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
+                data = None
 
-    return data
-    
-def get_realtimes_json_by_station_name(api_key: str, station_name: str):
-    base_url = 'http://swopenapi.seoul.go.kr/api/subway'
-    params = {
-        'key': api_key,
-        'data_format': 'json',
-        'service_name': 'realtimeStationArrival',
-        'start_index': 0,
-        'end_index': 1000,
-        'line_name': station_name
-    }
-    
-    url = make_endpoint(base_url, list(params.values()))
-    
-    # Save datetime requested
-    requested_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    response = request_get(url)
-    
-    # If response is None, errors raised during GET requesting 
-    if response is None: return None
-    # Parsing response to json
-    json = parse_realtimes_response(response)
-    
-    # If there is no data, return None
-    if json is None: return None
-    
-    return json 
-
-def get_realtimes_json_by_line_name(api_key: str, line_name: str):
-    base_url = 'http://swopenapi.seoul.go.kr/api/subway'
-    params = {
-        'key': api_key,
-        'data_format': 'json',
-        'service_name': 'realtimePosition',
-        'start_index': 0,
-        'end_index': 1000,
-        'line_name': line_name
-    }
-
-    url = make_endpoint(base_url, list(params.values()))
-    
-    # Save datetime requested
-    requested_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    response = request_get(url)
-    
-    # If response is None, errors raised during GET requesting 
-    if response is None: return None
-    # Parsing response to json
-    json = parse_realtimes_response(response)
-    
-    # If there is no data, return None
-    if json is None: return None
-    
-    return json 
-
-def get_realtimes_all_stations_json(api_key: str):
-    endpoint = "http://swopenAPI.seoul.go.kr/api/subway"
-
-    params = {
-        'key': api_key,
-        'data_format': 'json',
-        'service_name': 'realtimeStationArrival/ALL',
-    }
-
-    url = make_endpoint(endpoint, list(params.values()))
-
-    response = request_get(url)
-    # If response is None, errors raised during GET requesting 
-    if response is None: return None
-    json = parse_realtimes_response(response)
-    
-    # If there is no data, return None
-    if json is None: return None
-    return json 
-
-def convert_train_status(train_status: str) -> str:
-    """_summary_
-
-    Args:
-        train_status (str): 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
-
-    Returns:
-        str: 
-    """
-    match train_status:
-        case "0":
-            return "진입"
-        case "1":
-            return "도착"
-        case "2":
-            return "출발"
-        case "3":
-            return "전역출발"
-        case "4":
-            return "전역진입"
-        case "5":
-            return "전역도착"
-        case "99":
-            return "운행중"    
-        case _:
-            raise Exception("Wrong Input")
+        return data
         
-def get_realtime_station_json_from_api(station_name: str) -> dict:
-    api_key_db_manager = DBManager("db/api_key.db")
-    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
-    key = row[0]
-    
-    json = get_realtimes_json_by_station_name(key, station_name)
-    if json is None:
-        return {
-            "error": "There is no data"
-        }
-    return json
-
-def get_realtime_all_stations_json_from_api() -> dict:
-    api_key_db_manager = DBManager("db/api_key.db")
-    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
-    key = row[0]
-    
-    json = get_realtimes_all_stations_json(key)
-    if json is None:
-        return {
-            "error": "There is no data"
-        }
-    return json
-
-
-def get_realtime_line_data(line_name: str) -> RealtimeLine:
-    api_key_db_manager = DBManager("db/api_key.db")
-    row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
-    key = row[0]
-    
-    json = get_realtimes_json_by_line_name(key, line_name)
-    place = []
-    if json is None:
-        return {
-            "error": "There is no data"
-        }
-    for j in json: 
-        realtime_line_row = RealtimeRow(
-            train_id = j["trainNo"],
-            last_station_name = j["statnTnm"],
-            cur_station_name = j["statnNm"],
-            received_at = j["recptnDt"],
-            train_status = convert_train_status(j["trainSttus"]),
-            express = int(j["directAt"]),
-            up_down = int(j["updnLine"]),
+    def postprocess_realtime_position(self, data: list[dict]|None) -> RealtimeLine:
+        if data is None: return RealtimeLine(place = [])
+        
+        return RealtimeLine(
+            place = [
+                RealtimeRow(
+                    train_id = d["trainNo"],
+                    last_station_name = d["statnTnm"],
+                    cur_station_name = d["statnNm"],
+                    received_at = d["recptnDt"],
+                    train_status = self.train_status[d["trainSttus"]],
+                    express = int(d["directAt"]),
+                    up_down = int(d["updnLine"]),
+                )
+                for d in data
+            ]
         )
-        place.append(realtime_line_row)
+
+    def postprocess_realtime_station(self, data: list[dict]|None, line_id: int, up_down_to_direction: dict, train_ids: list) -> RealtimeStation:
+        realtime_station_data = {"left": [], "right": []}
+        if data is None: return RealtimeStation(**realtime_station_data)
         
-    realtime_line = RealtimeLine(place = place)
-    return realtime_line
-    
-def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: dict, train_ids: list) -> RealtimeStation:
-    realtime_station_data = {"left": [], "right": []}
-    for j in json: 
-        if int(j["subwayId"]) == line_id:
+        for d in data: 
             """
                 도착정보 데이터 (realtimeStationArrival) 오류 문제
                 1. 2호선 상하행 문제(모든 열차가 같은 방향으로 표시됨.)
@@ -269,29 +151,28 @@ def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: di
             
             # 3번 문제: 2호선 잘못된 열차번호
             if line_id == 1002: 
-                if j["btrainNo"].startswith(("3", "4", "6", "7", "8", "9")):
-                    j["btrainNo"] = "2" + j["btrainNo"][1:]
+                if d["btrainNo"].startswith(("3", "4", "6", "7", "8", "9")):
+                    d["btrainNo"] = "2" + d["btrainNo"][1:]
             
             # Remove irrelevant trains using train_id data
-            if (line_id != 1032 and line_id != 1077 and line_id != 1094) and j["btrainNo"] not in train_ids: continue
+            if (line_id != 1032 and line_id != 1077 and line_id != 1094) and d["btrainNo"] not in train_ids: continue
             
             realtime_station_row = RealtimeRow(
-                train_id = j["btrainNo"],
-                last_station_name = j["bstatnNm"],
-                searched_station_name = j["statnNm"],
-                cur_station_name = j["arvlMsg3"],
-                received_at = j["recptnDt"],
-                train_status = convert_train_status(j["arvlCd"]),
-                express = 1 if j["btrainSttus"] == "급행" else 0,
-                up_down = (int(re.search(r"\d+", j["btrainNo"]).group(0)) % 2 == 1) * 1, # 열차번호를 활용해서 상하행 파악
-                expected_arrival_time = int(j['barvlDt']),
-                information_message = j["arvlMsg2"]
+                train_id = d["btrainNo"],
+                last_station_name = d["bstatnNm"],
+                searched_station_name = d["statnNm"],
+                cur_station_name = d["arvlMsg3"],
+                received_at = d["recptnDt"],
+                express = 1 if d["btrainSttus"] == "급행" else 0,
+                train_status = self.train_status[d["arvlCd"]],
+                up_down = (int(re.search(r"\d+", d["btrainNo"]).group(0)) % 2 == 1) * 1, # 열차번호를 활용해서 상하행 파악
+                expected_arrival_time = int(d['barvlDt']),
+                information_message = d["arvlMsg2"]
             )
-        
+                
             realtime_station_data[up_down_to_direction[realtime_station_row.up_down]].append(realtime_station_row)
-        
-    realtime_station = RealtimeStation(**realtime_station_data)
-    return realtime_station
+    
+        return RealtimeStation(**realtime_station_data)
 
 
 if __name__ == "__main__":
