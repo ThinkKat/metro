@@ -251,10 +251,30 @@ def get_realtime_line_data(line_name: str) -> RealtimeLine:
     realtime_line = RealtimeLine(place = place)
     return realtime_line
     
-def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: dict) -> RealtimeStation:
+def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: dict, train_ids: list) -> RealtimeStation:
     realtime_station_data = {"left": [], "right": []}
     for j in json: 
         if int(j["subwayId"]) == line_id:
+            """
+                도착정보 데이터 (realtimeStationArrival) 오류 문제
+                1. 2호선 상하행 문제(모든 열차가 같은 방향으로 표시됨.)
+                2. 해당 역을 지나지 않는 열차도 표시됨. (예: 1호선 상행열차(서울->청량리 방향) 중 청량리가 종착역인 열차의 정보가 회기역에서 표시됨.)
+                3. 2호선 열차번호 문제 (2로 시작해야할 열차번호가 3,4,6,7,8,9로 시작함. 1-성수지선과 5-신정지선는 옳바른 데이터.) 
+                
+                1번에 대한 문제 해결 방법: 상하행 파악 로직을 추가. (열차번호를 통해 파악 가능. 열차번호가 짝수인 경우 상행, 홀수인 경우 하행. 신분당선, GTX-A)
+                2번에 대한 문제 해결 방법: 시간표의 열차번호 목록을 활용하여 관련 없는 열차 제거.
+                3번에 대한 문제 해결 방법: 관련없는 열차를 제거하기 전 2호선의 잘못된 열차번호를 수정하는 로직 추가
+            """
+            import re
+            
+            # 3번 문제: 2호선 잘못된 열차번호
+            if line_id == 1002: 
+                if j["btrainNo"].startswith(("3", "4", "6", "7", "8", "9")):
+                    j["btrainNo"] = "2" + j["btrainNo"][1:]
+            
+            # Remove irrelevant trains using train_id data
+            if (line_id != 1032 and line_id != 1077 and line_id != 1094) and j["btrainNo"] not in train_ids: continue
+            
             realtime_station_row = RealtimeRow(
                 train_id = j["btrainNo"],
                 last_station_name = j["bstatnNm"],
@@ -263,11 +283,11 @@ def get_realtime_station_data(json: dict, line_id: int, up_down_to_direction: di
                 received_at = j["recptnDt"],
                 train_status = convert_train_status(j["arvlCd"]),
                 express = 1 if j["btrainSttus"] == "급행" else 0,
-                up_down = 0 if j["updnLine"] == "상행" else 1,
+                up_down = (int(re.search(r"\d+", j["btrainNo"]).group(0)) % 2 == 1) * 1, # 열차번호를 활용해서 상하행 파악
                 expected_arrival_time = int(j['barvlDt']),
                 information_message = j["arvlMsg2"]
             )
-            
+        
             realtime_station_data[up_down_to_direction[realtime_station_row.up_down]].append(realtime_station_row)
         
     realtime_station = RealtimeStation(**realtime_station_data)

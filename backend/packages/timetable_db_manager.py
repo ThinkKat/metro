@@ -129,8 +129,6 @@ class TimetableDBManager(DBManager):
 
         Args:
             station_public_code (str): an unique station public code
-            day_code (int): 8 - weekday, 9 - holiday
-            up_down (int): 0 - up, 1 - down
 
         Returns:
             list[dict]: timetable information
@@ -148,3 +146,19 @@ class TimetableDBManager(DBManager):
         timetable_info = [self.dict_factory(row, columns) for row in rows]
         return timetable_info
     
+if __name__ == "__main__":
+    timetable_db_manager = TimetableDBManager()
+    import time
+    start = time.time()
+    station_public_code = "123" # 회기역
+    day_code = 8
+    print(
+        [
+            row[0] 
+            for row in timetable_db_manager.execute(
+                "SELECT DISTINCT realtime_train_id FROM final_timetable WHERE station_public_code = :station_public_code AND day_code = :day_code", 
+                {"station_public_code":station_public_code, "day_code": day_code}
+            ).fetchall()
+        ],
+        f"\n{time.time() - start:.05f}s...."
+    )

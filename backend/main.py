@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI
 import uvicorn
@@ -11,6 +12,7 @@ from packages.get_subway_information import get_subway_data
 from packages.realtime_thread import IntervalProcess
 from packages.get_realtime_information import get_realtime_line_data, get_realtime_station_json_from_api, get_realtime_station_data
 from packages.data_model import StationSearchbar, Station, RealtimeLine, SubwayData, RealtimeData
+from packages.utils import op_date, check_holiday
 
 app = FastAPI()
 
@@ -51,8 +53,6 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
             "error": "There exists no realtime information.",
             "station_public_code": station_public_code
         }
-        
-    station = Station(**station_info)
     # Realtime Postion of Lines
     line_info = timetable_db_manager.get_line_info(station_info["line_id"])
     realtime_line_data = get_realtime_line_data(line_info["line_name"])
@@ -65,14 +65,26 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
             "station_public_code": station_public_code
         }
     else:
+        # Get relevant train_id
+        train_ids = [
+            row[0] 
+            for row in timetable_db_manager.execute(
+                """
+                SELECT DISTINCT realtime_train_id 
+                FROM final_timetable 
+                WHERE station_public_code = :station_public_code
+                AND day_code = :day_code
+                """, 
+                {"station_public_code": station_public_code, "day_code": 9 if check_holiday(op_date()) else 8}
+            ).fetchall()
+        ]
+        # Get data from interval process 
         realtime_station_json = ip.data_hashmap[station.station_id]
         realtime_station_data = get_realtime_station_data(
-            realtime_station_json,
-            station_info["line_id"],
-            {
-                0: station.up,
-                1: station.down
-            }
+            realtime_station_json, 
+            station_info["line_id"], 
+            {0: station.up,1: station.down},
+            train_ids
         )
     
     realtime_data = RealtimeData()

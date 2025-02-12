@@ -11,7 +11,7 @@ class IntervalProcess:
     def __init__(self, interval: int):
         self.interval = interval # interval second
         self.data = None
-        self.data_hashmap = None
+        self.data_hashmap = {}
         self.is_loop = self.check_time()
         
     def check_time(self):
