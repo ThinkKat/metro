@@ -157,6 +157,12 @@ class RealtimeInformation:
             # Remove irrelevant trains using train_id data
             if (line_id != 1032 and line_id != 1077 and line_id != 1094) and d["btrainNo"] not in train_ids: continue
             
+            # 2호선 열차는 열차번호를 활용해서 상하행 파악
+            if line_id == 1002:
+                up_down = (int(re.search(r"\d+", d["btrainNo"]).group(0)) % 2 == 1) * 1, 
+            else:
+                up_down = 0 if d["updnLine"] == "상행" else 1
+            
             realtime_station_row = RealtimeRow(
                 train_id = d["btrainNo"],
                 last_station_name = d["bstatnNm"],
@@ -165,7 +171,7 @@ class RealtimeInformation:
                 received_at = d["recptnDt"],
                 express = 1 if d["btrainSttus"] == "급행" else 0,
                 train_status = self.train_status[d["arvlCd"]],
-                up_down = (int(re.search(r"\d+", d["btrainNo"]).group(0)) % 2 == 1) * 1, # 열차번호를 활용해서 상하행 파악
+                up_down = up_down,
                 expected_arrival_time = int(d['barvlDt']),
                 information_message = d["arvlMsg2"]
             )
