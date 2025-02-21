@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api/metro": "http://localhost:8000"
+      "/api/metro": "http://localhost:8001"
     }
   }
 })

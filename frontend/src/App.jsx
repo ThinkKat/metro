@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import SubwayMap from './components/SubwayMap/SubwayMap'
-import SidePanel from './components/SidePanel/SidePanel'
+import SidePanel from './components/Panel/Panel'
 
 function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(true);

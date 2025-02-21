@@ -1,6 +1,6 @@
 import SearchBar from './SearchBar';
 import StationInfo from './StationInfo';
-import './SidePanel.css';
+import './Panel.css';
 
 const SidePanel = ({isOpen, setIsOpen, stationPublicCode, setStationPublicCode}) => {
   return (
