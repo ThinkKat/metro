@@ -1,23 +1,30 @@
-import SearchBar from './SearchBar';
-import StationInfo from './StationInfo';
+import StationInfo from './StationInfo/StationInfo';
 import './Panel.css';
+import { useState } from 'react';
 
-const SidePanel = ({isOpen, setIsOpen, stationPublicCode, setStationPublicCode}) => {
+
+const Panel = ({ isModalOpen, setIsModalOpen, stationPublicCode, setStationPublicCode}) => {
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
   return (
-      <div className={`side-panel ${isOpen ? 'open' : ''}`}>
-      {/* 토글 버튼 추가 */}
-      <button 
-        className="drawer-toggle"
-        onClick={() => setIsOpen(!isOpen)}
+    <>
+      <div 
+        className={`panel ${isPanelOpen && 'open'}`}
       >
-        {isOpen ? '→' : '←'}
-      </button>
-      <div className="station-info-container">
-        <SearchBar stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode}/>
-        <StationInfo stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode}/>
+        <button className='panel-open-button'
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+        >
+          {isPanelOpen ?  '↓' : '↑'}
+        </button>
+        <div className="station-info-container">
+          <StationInfo isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode}/>
+        </div>
+        {isModalOpen && <div id="overlay-panel"></div>}
       </div>
-    </div>
+      
+    </>
+    
   );
 };
 
-export default SidePanel;
+export default Panel;

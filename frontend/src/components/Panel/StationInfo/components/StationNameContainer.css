@@ -1,0 +1,100 @@
+/* 기존 CSS에 추가 */
+.station-line-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.current-station {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    border-radius: 9999px;  
+    padding: 8px 16px;  
+    margin: 0 -5px; 
+    width: 55%;
+    z-index: 1;
+    box-sizing: border-box;
+
+    border: 4px solid;
+    background-color: white;
+}
+
+.adjacent-station {
+    flex: 1;
+    display: flex;
+    padding: 8px 16px;    
+    cursor: pointer;
+    width: 20%;
+    box-sizing: border-box;
+}
+
+.adjacent-station.left {
+    justify-content: flex-start;
+}
+
+.adjacent-station.right {
+    justify-content: flex-end;
+}
+
+.adjacent-station.last {
+    cursor: default;
+}
+
+.station-name-text {
+    color: white;
+    font-size: 0.875rem; 
+    font-weight: 600;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.station-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 9999px;
+    width: 3rem;  
+    height: 3rem; 
+    color: white;
+}
+
+.station-name {
+    flex: 1;
+    text-align: center;
+    font-size: 1.25rem;  
+    font-weight: 800;  
+    margin: 0 1.25rem;  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.adjacent-station-selector-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+
+    position: absolute;
+    width: 60%;
+    height: 100px;
+    top: 0;
+    left: 20%;
+    z-index: 3000;
+
+    border-radius: 20px;
+}
+
+.adjacent-station-selector {
+    cursor: pointer;
+
+    color: white;
+    font-size: 0.875rem; 
+    font-weight: 600;
+}

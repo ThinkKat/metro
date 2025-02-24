@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import './App.css'
-import SubwayMap from './components/SubwayMap/SubwayMap'
-import SidePanel from './components/Panel/Panel'
+import MetroMap from './components/MetroMap/MetroMap'
+import Panel from './components/Panel/Panel'
+import SearchBar from './components/SearchBar/SearchBar';
 
 function App() {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [stationPublicCode, setStationPublicCode] = useState(null)
 
   return (
@@ -16,12 +17,13 @@ function App() {
       </header>
       <main className="app-main">
         {/* {stationPublicCode && (
-            <div className="station-info">
+            <div className="test-station-info">
                 선택된 역: {stationPublicCode}
             </div>
         )} */}
-        <SubwayMap isDrawerOpen={isDrawerOpen} setIsDrawerOpen={setIsDrawerOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode} />
-        <SidePanel isOpen={isDrawerOpen} setIsOpen={setIsDrawerOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode} />
+        <MetroMap setStationPublicCode={setStationPublicCode} />
+        <SearchBar setStationPublicCode={setStationPublicCode} />
+        <Panel isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode} />
       </main>
     </div>
   )

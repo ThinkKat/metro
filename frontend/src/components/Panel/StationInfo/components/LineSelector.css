@@ -1,0 +1,31 @@
+
+  .line-selector {
+    display: flex;
+    justify-content: flex-start;
+    gap: 4px;  
+    padding: 16px 0;
+
+    overflow: scroll;
+    scrollbar-width: none;
+  }
+  
+  .line-badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 60px;  
+    padding: 4px 8px;  
+    font-size: 12px;  
+    border-radius: 9999px; 
+    border-width: 3px;  
+    border-style: solid;
+    font-weight: bold;  
+    cursor: pointer;
+    transition: opacity 0.2s; 
+    word-break: keep-all;
+    text-overflow: ellipsis;
+  }
+
+  .line-badge:hover {
+    opacity: 0.8;
+  }
