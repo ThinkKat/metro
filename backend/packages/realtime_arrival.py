@@ -80,6 +80,8 @@ class RealtimeArrival:
         data: list[dict] = self.realtime_information.get_realtime_data("realtimeStationArrival/ALL")
         # New data hashmap
         data_hashmap: dict[int, list] = {}
+        # If there is no data
+        if data is None: return data_hashmap
         for row in data:
             # Filtering necessary data
             if int(row["subwayId"]) not in [1032, 1077, 1094]: continue
