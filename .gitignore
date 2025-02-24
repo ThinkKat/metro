@@ -1,6 +1,6 @@
 **/.venv
 **/.DS_Store
-**/db/
+backend/db
 **/*.db
 **/__pycache__/
 **/static/
