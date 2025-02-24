@@ -1,6 +1,6 @@
 from .config import TIMETABLE_DB_PATH
 from .db_manager import DBManager
-from .data_model import Line, StationSearchbar, Station, AdjacentStation, TransferLine, TimetableRow, Timetable, SubwayData
+from .data_model import StationSearchbar
 
 class TimetableDBManager(DBManager):
     def __init__(self, timetable_db_path: str = TIMETABLE_DB_PATH):

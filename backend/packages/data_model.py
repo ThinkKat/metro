@@ -39,9 +39,14 @@ class RealtimeRow(BaseModel):
     train_status: str
     express: int
     up_down: int
-    expected_arrival_time: int|None = None # unit: second
+    current_delayed_time: int|None = None
+    expected_delayed_time: int|None = None
+    expected_left_time: int|None = None # unit: second
+    expected_arrival_time: str|None = None 
     stop_order_diff: int|None = None # 남은 정차역 수
     information_message: str|None = None
+    searched_station_department_time: str|None = None # of searched station 
+    searched_station_arrival_time: str|None = None # of searched station
 
 class RealtimeLine(BaseModel):
     place: List[RealtimeRow]

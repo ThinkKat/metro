@@ -3,6 +3,7 @@ from datetime import datetime
 
 import requests
 
+from .config import API_KEY_DB_PATH
 from .db_manager import DBManager
 from .data_model import RealtimeRow, RealtimeLine, RealtimeStation
 
@@ -62,7 +63,7 @@ class RealtimeInformation:
         }
     
     def get_key(self) -> str:
-        api_key_db_manager = DBManager("db/api_key.db")
+        api_key_db_manager = DBManager(API_KEY_DB_PATH)
         row = api_key_db_manager.execute("SELECT key FROM api_keys").fetchone()
         return row[0]
     
@@ -159,7 +160,7 @@ class RealtimeInformation:
             
             # 2호선 열차는 열차번호를 활용해서 상하행 파악
             if line_id == 1002:
-                up_down = (int(re.search(r"\d+", d["btrainNo"]).group(0)) % 2 == 1) * 1, 
+                up_down = (int(re.search(r"\d+", d["btrainNo"]).group(0)) % 2 == 1) * 1 
             else:
                 up_down = 0 if d["updnLine"] == "상행" else 1
             
