@@ -5,15 +5,21 @@ import CONFIG from '../../../Config';
 const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => { 
     const [selectedDay, setSelectedDay] = useState('weekday');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshTime, setRefershTime] = useState('');
+    const [additionalInfoOpen, setAdditionalInfoOpen] = useState(false);
     const REFRESH_INTERVAL = 13000; // 13초
 
     // Refreshing
     const handleRealtimeRefresh = () => {
         setIsRefreshing(true);
         realtimeRefresh(stationInformation.station.station_public_code).then((data) => {
+            const newRefreshTime = new Date();
+            const newRefreshTimeStr = `${newRefreshTime.getHours().toString().padStart(2,'0')}:${newRefreshTime.getMinutes().toString().padStart(2,'0')}`
+            
             console.log(`Refershing at ${new Date()}`)
             setRealtimeData(data.station);
             setIsRefreshing(false);
+            setRefershTime(newRefreshTimeStr);
         });
     }
 
@@ -38,16 +44,19 @@ const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => {
     
     return (
         tab === "realTime" 
-        ? <ArrivalInfo isRefreshing={isRefreshing} onClick={handleRealtimeRefresh} stationInformation={stationInformation} realtimeData={realtimeData} />
-        : <TimetableInfo selectedDay={selectedDay} setSelectedDay={setSelectedDay} stationInformation={stationInformation} />
+        ? <ArrivalInfo isRefreshing={isRefreshing} refreshTime={refreshTime} onClick={handleRealtimeRefresh} stationInformation={stationInformation} realtimeData={realtimeData} additionalInfoOpen={additionalInfoOpen} setAdditionalInfoOpen={setAdditionalInfoOpen}/>
+        : <TimetableInfo selectedDay={selectedDay} setSelectedDay={setSelectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} setAdditionalInfoOpen={setAdditionalInfoOpen}/>
     );
 }
 
 export default Tab;
 
-const RefreshButton = ({isRefreshing, onClick}) => {
+const RefreshButton = ({refreshTime, isRefreshing, onClick}) => {
     return (
         <div className="arrival-refresh-button-container">
+            <div className='refresh-time-container'>
+                <span className='refresh-time'>{refreshTime}</span>
+            </div>
             <button 
                 className={`arrival-refresh-button ${isRefreshing ? 'refreshing' : ''}`}
                 onClick={onClick}
@@ -96,44 +105,67 @@ const AdjacentStationDirection = ({stationInformation}) => {
     );
 };
 
-const ArrivalInfo = ({isRefreshing, onClick, stationInformation, realtimeData}) => {
+const ArrivalInfo = ({isRefreshing, refreshTime, onClick, stationInformation, realtimeData, additionalInfoOpen, setAdditionalInfoOpen}) => {
     return (
         <div className="tab-info">
             <div className='sticky-header'>
                 <div className="tab-header arrival">
-                    <div className='tab-header-title'>도착 정보</div>
+                    <div className='tab-header-title'>
+                        도착 정보
+                        <button className="additional-info" onClick={() => setAdditionalInfoOpen(!additionalInfoOpen)}>
+                            추가정보
+                        </button>
+                    </div>
                     <RefreshButton 
+                        refreshTime={refreshTime}
                         isRefreshing={isRefreshing} 
                         onClick={onClick}
                     />
                 </div>
                 <AdjacentStationDirection stationInformation={stationInformation}/>
             </div>
-            <ArrivalListsContainer realtimeData={realtimeData}/>
+            <ArrivalListsContainer realtimeData={realtimeData} additionalInfoOpen={additionalInfoOpen}/>
         </div>
     );
 };
 
-const ArrivalListsContainer = ({realtimeData}) => {
+const ArrivalListsContainer = ({realtimeData, additionalInfoOpen}) => {
     return (
         <div className="lists-container arrival">
-            <ArrivalList direction={'left'} realtimeData={realtimeData}/>
-            <ArrivalList direction={'right'} realtimeData={realtimeData}/>
+            <ArrivalList direction={'left'} realtimeData={realtimeData} additionalInfoOpen={additionalInfoOpen}/>
+            <ArrivalList direction={'right'} realtimeData={realtimeData} additionalInfoOpen={additionalInfoOpen}/>
         </div>
     );
 };
 
-const ArrivalList = ({direction, realtimeData}) => {
+const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
     return (
         <div className={`data-list arrival ${direction}`}>
             {
                 realtimeData !== null && realtimeData[direction].length > 0 ?
-                realtimeData[direction].map((station, index) => (
-                    <div className="data-item" key={index}>
-                        <span className="direction">{station.last_station_name}</span>
-                        <span className="time">{station.information_message.replace(/\[(\d+)\]/, "$1").replace(/\(.*\)/, "")}</span>
-                    </div>
-                ))
+                realtimeData[direction].map((arrival, index) => {
+                    const expArrTime = new Date(arrival.expected_arrival_time);
+                    const expArrTimeStr = `${expArrTime.getHours().toString().padStart(2,'0')}:${expArrTime.getMinutes().toString().padStart(2,'0')}`
+                    const delayedTime = arrival.current_delayed_time > 0 && `약 ${parseInt(arrival.current_delayed_time/60)}분 ${parseInt(arrival.current_delayed_time%60)}초 지연`
+
+                    return (
+                        <div className = 'data-item-container'>
+                            <div className="data-item" key={index}>
+                                <span className="direction">{arrival.last_station_name}</span>
+                                <span className="time">{arrival.information_message.replace(/\[(\d+)\]/, "$1").replace(/\(.*\)/, "")}</span>
+                            </div>
+                            {
+                                additionalInfoOpen && (
+                                    <div>
+                                        <div className='expected-arrival-time'>예상도착시각 {expArrTimeStr}</div>
+                                        <div className='delayed-time'>{delayedTime}</div>
+                                        <div className='train-id'>열차번호 {arrival.train_id}</div>
+                                    </div>
+                                )
+                            }
+                        </div>
+                    );
+                })
                 : <div>
                     정보가 없습니다.
                 </div>
@@ -164,45 +196,60 @@ const TimetableDayButton = ({day, selectedDay, setSelectedDay}) => {
     );
 };
 
-const TimetableInfo = ({selectedDay, setSelectedDay, stationInformation}) => {
+const TimetableInfo = ({selectedDay, setSelectedDay, stationInformation, additionalInfoOpen, setAdditionalInfoOpen}) => {
     return (
         <div className="tab-info">
             <div className='sticky-header'>
                 <div className="tab-header timetable">
-                    <div className='tab-header-title'>시간표 정보</div>
+                    <div className='tab-header-title'>
+                        시간표 정보
+                        <button className="additional-info" onClick={() => setAdditionalInfoOpen(!additionalInfoOpen)}>
+                            추가정보
+                        </button>
+                    </div>
                     <TimetableDaySelector selectedDay={selectedDay} setSelectedDay={setSelectedDay}/>
                 </div>
                 <AdjacentStationDirection stationInformation={stationInformation}/>
             </div>
-            <TimetableListsContainer selectedDay={selectedDay} stationInformation={stationInformation}/>
+            <TimetableListsContainer selectedDay={selectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
         </div>
     );
 };
 
-const TimetableListsContainer = ({selectedDay, stationInformation}) => {
+const TimetableListsContainer = ({selectedDay, stationInformation, additionalInfoOpen}) => {
     return (
         selectedDay == "weekday" ?
         <div className="lists-container timetable">
-            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} />
-            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} />
+            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
+            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
         </div> :
         <div className="lists-container timetable">
-            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} />
-            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} />
+            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
+            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
         </div>
     );
 };
 
-const TimetableList = ({selectedDay, stationInformation, direction}) => {
+const TimetableList = ({selectedDay, stationInformation, direction, additionalInfoOpen}) => {
     return (
         <div className={`data-list timetable ${direction}`}>
             {
                 stationInformation.timetables[selectedDay][direction]
                 .filter((timetable) => timetable.department_time !== null)
                 .map((timetable, index) => (
-                    <div className="data-item" key={index}>
-                        <span className="time">{timetable.last_station_name}</span>
-                        <span className="direction">{timetable.department_time.replace(/(\d{2}):(\d{2}):(\d{2})/, '$1:$2')}</span>
+                    <div className = 'data-item-container'>
+                        <div className="data-item" key={index}>
+                            <span className="time">{timetable.last_station_name}</span>
+                            <span className="direction">{timetable.department_time.replace(/(\d{2}):(\d{2}):(\d{2})/, '$1:$2')}</span>
+                        </div>
+                        {
+                            additionalInfoOpen && (
+                                <div>
+                                    <div className='train-id'>열차번호 {timetable.train_id}</div>
+                                </div>
+                            )
+                        }
+                        
                     </div>
                 ))
             }
