@@ -26,3 +26,13 @@
     align-items: center;
     height: 100%;
 }
+
+@media screen and (max-width: 450px) {
+  .station-info-container.no-station {
+      display: block;
+  }
+
+  .station-info-text {
+      padding-top: 20%;
+  }
+}

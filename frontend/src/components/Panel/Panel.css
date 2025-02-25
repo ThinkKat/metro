@@ -38,16 +38,22 @@
   @media screen and (max-width: 450px) {
     .panel-open-button {
       position: relative;
-      opacity: 100;   
+      opacity: 100;
+      background-color:  #e5e7eb;
+      border: none;
+      margin-left: 80%;
+      border-radius: 5px;
+      height: 30px;
     }
 
     .panel {
       max-width: 100%;
       position: absolute;
       border-radius: 20px 20px 0 0;
-      top: 80%;
+      top: 60%;
       left: 0;
       transition: 200ms;
+      box-shadow: 0 -2px 0 0 rgba(0, 0, 0, 0.1);
     }
 
     .panel.open {
