@@ -3,6 +3,7 @@
   max-height: 100vh;
   text-align: center;
   overflow: hidden;
+  position: fixed;
 }
 
 .app-container {
