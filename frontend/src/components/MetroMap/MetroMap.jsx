@@ -5,10 +5,10 @@ import MetroMapSVG from '../../assets/seoul_metro_map_test_compress.svg'
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 const transfromConfig = {
-  'initialScale': 1.5,
+  'initialScale': 3,
   'centerOnInit': true,
   'minScale': 1.5,
-  'maxScale': 6, 
+  'maxScale': 8, 
   'doubleClick': {'disabled': true} // Error raise when click svg after clicking station element in svg
 };
 
