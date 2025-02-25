@@ -38,6 +38,7 @@ class RealtimeRow(BaseModel):
     received_at: str # YYYY-MM-DD HH:MM:SS
     train_status: str
     express: int
+    express_non_stop: int|None = None
     up_down: int
     current_delayed_time: int|None = None
     expected_delayed_time: int|None = None

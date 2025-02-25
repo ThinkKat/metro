@@ -1,5 +1,6 @@
 import time
 import threading
+import logging
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -8,6 +9,8 @@ from .utils import op_date, check_holiday, is_next_date
 from .timetable_db_manager import TimetableDBManager
 from .get_realtime_information import RealtimeInformation
 from .data_model import RealtimeRow, RealtimeStation
+
+logger = logging.getLogger("realtime-arrival")
 
 class RealtimeArrival:
     def __init__(self):
@@ -74,7 +77,7 @@ class RealtimeArrival:
     def _get_realtime_arrival(self) -> dict[int, list]:
         api_name = "realtimeArrival/ALL"
         requested_at = datetime.now()
-        print(f"{api_name} Requested_at: {requested_at}")
+        logger.info(f"{api_name} Requested_at: {requested_at}")
         
         # Get realtimeArrival/ALL API
         data: list[dict] = self.realtime_information.get_realtime_data("realtimeStationArrival/ALL")
@@ -111,7 +114,7 @@ class RealtimeArrival:
         api_name = "realtimePosition"
         data = []
         requested_at = datetime.now()
-        print(f"{api_name} Requested_at: {requested_at}")
+        logger.info(f"{api_name} Requested_at: {requested_at}")
         
         for line_id in self.lines_id_name:
             if not line_id in [1032, 1077, 1094]:
@@ -181,7 +184,8 @@ class RealtimeArrival:
             how = "inner",
             suffixes=("","_next")
         )
-        mask = (arrival["stop_no"] <= arrival["stop_no_next"]) & (arrival["express_non_stop"] == 0)
+
+        mask = (arrival["stop_no"] <= arrival["stop_no_next"]) & (arrival["express_non_stop_next"] == 0)
         arrival = arrival[mask]
         
         arrival["diff"] = arrival["stop_no_next"] - arrival["stop_no"]
@@ -205,6 +209,7 @@ class RealtimeArrival:
             "station_name_next": "searched_station_name",
             "arrival_time_next": "searched_station_arrival_time" ,
             "department_time_next": "searched_station_department_time",
+            "express_non_stop_next": "searched_express_non_stop"
         }
         
         arrival = arrival.rename(columns=change_cols).sort_values("stop_order_diff")
@@ -251,15 +256,14 @@ class IntervalProcess:
         while True:
             self.is_loop = self.check_time()
             if self.is_loop:
-                print("Get realtime data for all stations")
+                logger.info("Get realtime data for all stations")
                 self.realtime_arrival.process_arrival_data()
-                print(len(self.realtime_arrival.arrival_hashmap))
+                logger.info(len(self.realtime_arrival.arrival_hashmap))
             time.sleep(self.interval)
             
     def start(self):
         t = threading.Thread(target = self.get_data)
         t.start()
-
 
 if __name__ == "__main__":
     # start_total = time.time()
