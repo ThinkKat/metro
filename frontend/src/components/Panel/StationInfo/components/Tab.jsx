@@ -128,7 +128,7 @@ const ArrivalList = ({direction, realtimeData}) => {
         <div className={`data-list arrival ${direction}`}>
             {
                 realtimeData !== null && realtimeData[direction].length > 0 ?
-                realtimeData.left.map((station, index) => (
+                realtimeData[direction].map((station, index) => (
                     <div className="data-item" key={index}>
                         <span className="direction">{station.last_station_name}</span>
                         <span className="time">{station.information_message.replace(/\[(\d+)\]/, "$1").replace(/\(.*\)/, "")}</span>
