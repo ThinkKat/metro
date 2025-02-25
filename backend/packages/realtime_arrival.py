@@ -241,11 +241,13 @@ class RealtimeArrival:
                 data[down].append(row)
         return RealtimeStation(**data)
 
-class IntervalProcess:
+class IntervalThread:
     def __init__(self, interval: int):
         self.realtime_arrival = RealtimeArrival()
         self.interval = interval # interval second
         self.is_loop = self.check_time()
+        self.t = None
+        self.terminate_thread = False
         
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
@@ -257,20 +259,31 @@ class IntervalProcess:
             self.is_loop = self.check_time()
             if self.is_loop:
                 logger.info("Get realtime data for all stations")
+                start = time.time()
                 self.realtime_arrival.process_arrival_data()
-                logger.info(len(self.realtime_arrival.arrival_hashmap))
+                logger.info(f"Runtime {time.time()-start:.5f}s... No of Rows: {len(self.realtime_arrival.arrival_hashmap)}")
             time.sleep(self.interval)
-            
+    
+    def checkIsAlive(self):
+        # Check thread is alive
+        return self.t is not None and self.t.is_alive()
+    
     def start(self):
-        t = threading.Thread(target = self.get_data)
-        t.start()
+        if not self.checkIsAlive():
+            self.t = threading.Thread(target = self.get_data) # Set thread to an attribute
+            self.t.start()
+            logger.info(f"Thread:{self.t.name} starts to run")
+        else:
+            logger.info("Thread is already running")
+        
+    
 
 if __name__ == "__main__":
     # start_total = time.time()
     
     INTERVAL = 15
     
-    interval_process = IntervalProcess(INTERVAL)
+    interval_process = IntervalThread(INTERVAL)
     interval_process.start()
     
     
