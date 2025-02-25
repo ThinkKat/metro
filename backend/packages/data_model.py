@@ -68,6 +68,8 @@ class TimetableRow(BaseModel):
     department_time: str | None  # "HH:mm:ss"
     up_down: int
     express: int  # 0 = 일반, 1 = 급행
+    sort_hour_key: int
+    sort_minute_key: int
 
 class Timetable(BaseModel):
     left: List[TimetableRow]

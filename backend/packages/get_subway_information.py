@@ -1,7 +1,6 @@
-import os
 import sys
 import time
-import sqlite3
+from operator import attrgetter
 
 from .timetable_db_manager import TimetableDBManager
 from .data_model import Line, Station, AdjacentStation, TransferLine, TimetableRow, Timetable, SubwayData
@@ -75,6 +74,10 @@ def get_subway_data(station_public_code: str) -> SubwayData|dict:
     
     for t in timetable_info:
         direction = "up" if t["up_down"] == 0 else "down"
+        t["sort_hour_key"] = int(t["department_time"][0:2]) if t["department_time"] is not None else 99
+        t["sort_hour_key"] = t["sort_hour_key"] + 24 if t["sort_hour_key"] < 5 else t["sort_hour_key"]
+        t["sort_minute_key"] = int(t["department_time"][3:5]) if t["department_time"] is not None else 99
+        
         if t["day_code"] == 8:
             timetable["weekday"][station.__getattribute__(direction)].append(TimetableRow(**t))
         else:
@@ -82,6 +85,11 @@ def get_subway_data(station_public_code: str) -> SubwayData|dict:
     
     timetables = {k:Timetable(**v) for k, v in timetable.items()} 
     has_timetables = len(timetable_info) != 0
+    
+    timetables["weekday"].left = sorted(timetables["weekday"].left, key=attrgetter("sort_hour_key", "sort_minute_key"))
+    timetables["weekday"].right = sorted(timetables["weekday"].right, key=attrgetter("sort_hour_key", "sort_minute_key"))
+    timetables["holiday"].left = sorted(timetables["holiday"].left, key=attrgetter("sort_hour_key", "sort_minute_key"))
+    timetables["holiday"].right = sorted(timetables["holiday"].right, key=attrgetter("sort_hour_key", "sort_minute_key"))
       
     subway_data = SubwayData(
         line= line,
