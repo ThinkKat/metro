@@ -1,11 +1,7 @@
 import StationInfo from './StationInfo/StationInfo';
 import './Panel.css';
-import { useState } from 'react';
 
-
-const Panel = ({ isModalOpen, setIsModalOpen, stationPublicCode, setStationPublicCode}) => {
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-
+const Panel = ({ isModalOpen, setIsModalOpen, stationPublicCode, setStationPublicCode, isPanelOpen, setIsPanelOpen}) => {
   return (
     <>
       <div 

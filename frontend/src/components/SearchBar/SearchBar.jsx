@@ -2,10 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import CONFIG from "../Config"
 import './SearchBar.css';
 
-
-
-
-const SearchBar = ({setStationPublicCode}) => {
+const SearchBar = ({setStationPublicCode, setIsPanelOpen}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownData, setDropdownData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -49,6 +46,7 @@ const SearchBar = ({setStationPublicCode}) => {
         onClick = {(station) => {
           setSearchQuery(station.station_name);
           setStationPublicCode(station.station_public_code);
+          setIsPanelOpen(true);
           setIsDropdownOpen(false);
         }}
       />

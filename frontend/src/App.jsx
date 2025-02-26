@@ -5,7 +5,8 @@ import Panel from './components/Panel/Panel'
 import SearchBar from './components/SearchBar/SearchBar';
 
 function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isPanelOpen, setIsPanelOpen] = useState(false); // Panel
   const [stationPublicCode, setStationPublicCode] = useState(null)
 
   return (
@@ -22,8 +23,8 @@ function App() {
             </div>
         )} */}
         <MetroMap setStationPublicCode={setStationPublicCode} />
-        <SearchBar setStationPublicCode={setStationPublicCode} />
-        <Panel isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode} />
+        <SearchBar setStationPublicCode={setStationPublicCode} setIsPanelOpen={setIsPanelOpen}/>
+        <Panel isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} stationPublicCode={stationPublicCode} setStationPublicCode={setStationPublicCode} isPanelOpen={isPanelOpen} setIsPanelOpen={setIsPanelOpen}/>
       </main>
     </div>
   )
