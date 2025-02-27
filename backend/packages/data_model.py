@@ -40,8 +40,8 @@ class RealtimeRow(BaseModel):
     express: int
     express_non_stop: int|None = None
     up_down: int
-    current_delayed_time: int|None = None
-    expected_delayed_time: int|None = None
+    current_delayed_time: float|None = None
+    expected_delayed_time: float|None = None
     expected_left_time: int|None = None # unit: second
     expected_arrival_time: str|None = None 
     stop_order_diff: int|None = None # 남은 정차역 수
