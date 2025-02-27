@@ -53,8 +53,14 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
         
     # Realtime Postion of Lines
     line_info = timetable_db_manager.get_line_info(station_info["line_id"])
-    data = realtime_information.get_realtime_data("realtimePosition", line_info["line_name"])
-    realtime_line_data = realtime_information.postprocess_realtime_position(data)
+    
+    if line_info["line_id"] not in it.realtime_arrival.realtime_position:
+        realtime_line_data = {
+            "error": "There exists no realtime position information.",
+            "line_id": line_info["line_id"]
+        }
+    else:
+        realtime_line_data = it.realtime_arrival.realtime_position[line_info["line_id"]]
     
     # Realtime Arrival of Stations
     if station.station_id not in it.realtime_arrival.arrival_hashmap:
