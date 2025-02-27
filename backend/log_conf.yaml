@@ -12,10 +12,10 @@ formatters:
     datefmt: "%Y-%m-%d %H:%M:%S"
     style: "{"
 handlers:
-  default:
-    formatter: default
-    class: logging.StreamHandler
-    stream: ext://sys.stdout
+  # default:
+  #   formatter: default
+  #   class: logging.StreamHandler
+  #   stream: ext://sys.stdout
   access:
     formatter: access
     class: logging.FileHandler
@@ -24,18 +24,18 @@ loggers:
   uvicorn.error:
     level: INFO
     handlers:
-      - default
+      # - default
       - access
     propagate: no
   uvicorn.access:
     level: INFO
     handlers:
-      - default
+      # - default
       - access
     propagate: no
 root:
   level: INFO
   handlers:
-    - default
+    # - default
     - access
   propagate: no
