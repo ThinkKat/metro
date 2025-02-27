@@ -2,6 +2,7 @@ import time
 import threading
 import logging
 from datetime import datetime, timedelta
+import warnings
 
 import pandas as pd
 
@@ -11,6 +12,14 @@ from .get_realtime_information import RealtimeInformation
 from .data_model import RealtimeRow, RealtimeStation
 
 logger = logging.getLogger("realtime-arrival")
+
+# To save warning outputs to log file.
+def save_warning(message, category, filename, lineno, file=None, line=None):
+    logger.warning(f"{category.__name__}: {message} ({filename}, line {lineno})")
+
+# When the RuntimeWarnings are raised, save to the logs.
+warnings.showwarning = save_warning
+warnings.simplefilter("always", RuntimeWarning)
 
 class RealtimeArrival:
     def __init__(self):
@@ -142,8 +151,23 @@ class RealtimeArrival:
         
         # convert to dataframe
         rt = pd.DataFrame(data, columns=list(change_cols.keys()))
-        rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
-        
+        # Error when kyungchun line - kwangwoondae station
+        try:
+            rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
+        except Exception:
+            import traceback
+            error = traceback.format_exc()
+            logger.error(error)
+
+            # 경춘선 광운대
+            mask = (rt["line_id"] == 1067) & (rt["station_name"] == "광운대")
+            rt.loc[mask, "station_id"] = 1067080119
+            
+            mask = (rt["line_id"] == 1067) & (rt["last_station_name"] == "광운대")
+            rt.loc[mask, "last_station_id"] = 1067080119
+            rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
+            
+            
         # Change the train_id of line 2
         mask = (rt["line_id"] == 1002) & (rt["train_id"].str.startswith(("3", "4", "6", "7", "8", "9")))
         rt.loc[mask, "train_id"] = "2" + rt.loc[mask, "train_id"].str[1:]
@@ -171,11 +195,30 @@ class RealtimeArrival:
         data_join["received_at"] = data_join["received_at"].str.split(" ", expand=True)[1].apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
 
         # Calculate delayed time
-        data_join.loc[data_join["train_status"]<=1, "delayed_time"] = (pd.to_datetime(data_join["received_at"]) - pd.to_datetime(data_join["arrival_datetime"])).dt.total_seconds()
-        data_join.loc[data_join["train_status"]==2, "delayed_time"] = (pd.to_datetime(data_join["received_at"]) - pd.to_datetime(data_join["department_datetime"])).dt.total_seconds()
-        data_join.loc[data_join["train_status"]==0, "delayed_time"] += 30 # 열차 접근 상태 보정
+        datetime_format = "%Y-%m-%d %H:%M:%S"
+        
+        data_join["received_at_dt"] = pd.to_datetime(data_join["received_at"], format=datetime_format)
+        data_join["arrival_datetime_dt"] = pd.to_datetime(data_join["arrival_datetime"], format=datetime_format)
+        data_join["department_datetime_dt"] =pd.to_datetime(data_join["department_datetime"], format=datetime_format) 
+        
+        data_join.loc[data_join["train_status"]<=1, "delayed_time"] = data_join["received_at_dt"] - data_join["arrival_datetime_dt"]
+        data_join.loc[data_join["train_status"]==2, "delayed_time"] = data_join["received_at_dt"] - data_join["department_datetime_dt"]
+        
+        """
+            Adjust to delayed_time of coming train time.
+            Trains status == 0 -> 접근
+            
+            Coming train is about 30 seconds before arrival. 
+            delayed_time when train_status is coming
+                received_at - (arrival_datetime - 30s) 
+                = received_at - arrival_datetime + 30s
+                = delayed_time of arrival + 30s
+        """
+        data_join.loc[data_join["train_status"]==0, "delayed_time"] += pd.to_timedelta(30, unit = 's') 
+        
         
         # Join next timetable data
+        # Next suffix means searched station.
         arrival = pd.merge(
             data_join,
             self.tb,
@@ -185,12 +228,30 @@ class RealtimeArrival:
             suffixes=("","_next")
         )
 
+        """
+            Masking valid data
+            1. Stations that isn't yet passed (stop_no <= stop_no_next)
+            2. Stations where the express train isn't stopped. (express_non_stop_next == 0)
+        """
         mask = (arrival["stop_no"] <= arrival["stop_no_next"]) & (arrival["express_non_stop_next"] == 0)
-        arrival = arrival[mask]
+        arrival = arrival[mask].reset_index(drop = True)
         
+        """
+            Calculate arrival information
+            1. "diff" is the difference between a current station order and a searched station order
+            2. "expected_arrival_time"  = searched_arrival_datetime + expected_delayed_time
+                Currently, expectd_delayed_time can't be able to calculate "expected_delayed_time"
+                So, use delayed_time instead of this attribute. Delayed time means a delayed time in current train status.
+        """
         arrival["diff"] = arrival["stop_no_next"] - arrival["stop_no"]
-        arrival["expected_arrival_time"] = pd.to_datetime(arrival["arrival_datetime_next"]) + pd.to_timedelta(arrival["delayed_time"], unit="s")
+        arrival["expected_arrival_time"] = pd.to_datetime(arrival["arrival_datetime_next"]) + arrival['delayed_time']
         arrival["expected_arrival_time"] = arrival["expected_arrival_time"].astype("string")
+        
+        """
+            Convert delayed_time to seconds unit.
+            Before converting, dtype of delayed_time is timedelta[64].
+        """
+        arrival["delayed_time"] = (arrival["delayed_time"].dt.total_seconds()).round(decimals=0)
         
         return arrival
     
@@ -260,7 +321,16 @@ class IntervalThread:
             if self.is_loop:
                 logger.info("Get realtime data for all stations")
                 start = time.time()
-                self.realtime_arrival.process_arrival_data()
+                
+                # To prevent unexpected thread termination
+                # Add error log 
+                try:
+                    self.realtime_arrival.process_arrival_data()
+                except Exception:
+                    import traceback
+                    err = traceback.format_exc()
+                    logger.error(err)
+                
                 logger.info(f"Runtime {time.time()-start:.5f}s... No of Rows: {len(self.realtime_arrival.arrival_hashmap)}")
             time.sleep(self.interval)
     
