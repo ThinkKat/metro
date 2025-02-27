@@ -3,6 +3,7 @@ import threading
 import logging
 from datetime import datetime, timedelta
 import warnings
+import requests
 
 import pandas as pd
 
@@ -45,6 +46,12 @@ class RealtimeArrival:
         # Load static data: timetable data
         self.tb: pd.DataFrame = self._load_timetable_data() 
         self.lines_id_name: dict[int, str] = self._load_line_data() 
+        
+    def open_http_session(self):
+        self.session = requests.Session()
+        
+    def close_http_session(self):
+        self.session.close()
     
     def _load_timetable_data(self) -> pd.DataFrame:
         # load timetable data
@@ -89,7 +96,10 @@ class RealtimeArrival:
         logger.info(f"{api_name} Requested_at: {requested_at}")
         
         # Get realtimeArrival/ALL API
-        data: list[dict] = self.realtime_information.get_realtime_data("realtimeStationArrival/ALL")
+        url_realtimeArrivalAll = self.realtime_information.get_url("realtimeStationArrival/ALL")
+        data: list[dict] = self.realtime_information.parse_response(
+            self.session.get(url_realtimeArrivalAll, timeout=2))
+        
         # New data hashmap
         data_hashmap: dict[int, list] = {}
         # If there is no data
@@ -126,12 +136,14 @@ class RealtimeArrival:
         logger.info(f"{api_name} Requested_at: {requested_at}")
         
         for line_id in self.lines_id_name:
-            if not line_id in [1032, 1077, 1094]:
-                tmp = self.realtime_information.get_realtime_data(api_name, self.lines_id_name[line_id])
-                # Fail to get data
-                if tmp is not None:
-                    data.extend(tmp)
-                time.sleep(0.03)
+            # Create url
+            url = self.realtime_information.get_url(api_name, self.lines_id_name[line_id])
+            # Get data and parse response
+            tmp = self.realtime_information.parse_response(
+                self.session.get(url, timeout=2))
+            # Fail to get data
+            if tmp is not None:
+                data.extend(tmp)
         
         # select using columns
         change_cols = {
@@ -195,11 +207,12 @@ class RealtimeArrival:
         data_join["received_at"] = data_join["received_at"].str.split(" ", expand=True)[1].apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
 
         # Calculate delayed time
-        datetime_format = "%Y-%m-%d %H:%M:%S"
+        # Datetime foramt is %Y-%m-%d %H:%M:%S or %Y-%m-%d %H:%M
+        datetime_format = "ISO8601"
         
         data_join["received_at_dt"] = pd.to_datetime(data_join["received_at"], format=datetime_format)
         data_join["arrival_datetime_dt"] = pd.to_datetime(data_join["arrival_datetime"], format=datetime_format)
-        data_join["department_datetime_dt"] =pd.to_datetime(data_join["department_datetime"], format=datetime_format) 
+        data_join["department_datetime_dt"] = pd.to_datetime(data_join["department_datetime"], format=datetime_format) 
         
         data_join.loc[data_join["train_status"]<=1, "delayed_time"] = data_join["received_at_dt"] - data_join["arrival_datetime_dt"]
         data_join.loc[data_join["train_status"]==2, "delayed_time"] = data_join["received_at_dt"] - data_join["department_datetime_dt"]
@@ -256,6 +269,9 @@ class RealtimeArrival:
         return arrival
     
     def process_arrival_data(self):
+        # Open HTTP session
+        self.open_http_session()
+        
         # 1032, 1077, 1094 data
         arrival_hashmap: dict[int, list] = self._get_realtime_arrival()
         
@@ -289,6 +305,9 @@ class RealtimeArrival:
         self.arrival_hashmap = {
             k:[RealtimeRow(**v) for v in values] for k, values in arrival_hashmap.items()
         }
+        
+        # Close HTTP session
+        self.close_http_session()
         
     def get_data_by_station_id(self, station_id: int, up: str, down: str) -> RealtimeStation:
         # Create arrival data
