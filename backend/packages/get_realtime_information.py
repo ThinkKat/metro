@@ -107,7 +107,7 @@ class RealtimeInformation:
             error = json[keys[0]]
             if error['code'] == 'INFO-000':
                 # If code is 'INFO-000', there is no issue.
-                logger.info("Success to get data")
+                # logger.info("Success to get data")
                 data = json[keys[1]]
             else:
                 logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
