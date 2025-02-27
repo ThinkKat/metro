@@ -15,10 +15,11 @@ case "$1" in
     ;;
   restart)
     echo "Restarting FastAPI server..."
-    kill $(ps -ef | grep 'uvicorn\smain:app' | awk '{print $2}') && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config log_conf.yaml & disown
+    kill $(ps -ef | grep 'uvicorn\smain:app' | awk '{print $2}')
+    .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config log_conf.yaml & disown
     ;;
   *)
-    echo "Usage: $0 {dev|start|terminate}"
+    echo "Usage: $0 {dev|start|terminate|restart}"
     exit 1
     ;;
 esac
