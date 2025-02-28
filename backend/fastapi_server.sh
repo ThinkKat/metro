@@ -11,11 +11,11 @@ case "$1" in
     ;;
   terminate)
     echo "Stopping FastAPI server..."
-    kill $(ps -ef | grep 'uvicorn\smain:app' | awk '{print $2}')
+    kill $(ps -ef | grep 'uvicorn\smain:app\s--host 0.0.0.0' | awk '{print $2}')
     ;;
   restart)
     echo "Restarting FastAPI server..."
-    kill $(ps -ef | grep 'uvicorn\smain:app' | awk '{print $2}')
+    kill $(ps -ef | grep 'uvicorn\smain:app\s--host 0.0.0.0' | awk '{print $2}')
     .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config log_conf.yaml & disown
     ;;
   *)
