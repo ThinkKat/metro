@@ -29,6 +29,18 @@ class AdjacentStation(Station):
 class TransferLine(Line):
     station_public_code: str
     
+class RealtimePositionRow(BaseModel):
+    line_id: int
+    train_id: str
+    station_id: int
+    station_name: str
+    last_station_id: int
+    last_station_name: str
+    received_at: str
+    train_status: int
+    express: int
+    up_down: int
+    
 class RealtimeRow(BaseModel):
     train_id: str
     first_station_name: str|None = None
@@ -49,15 +61,15 @@ class RealtimeRow(BaseModel):
     searched_station_department_time: str|None = None # of searched station 
     searched_station_arrival_time: str|None = None # of searched station
 
-class RealtimeLine(BaseModel):
-    place: List[RealtimeRow]
+class RealtimePosition(BaseModel):
+    place: List[RealtimePositionRow]
     
 class RealtimeStation(BaseModel):
     left: List[RealtimeRow]
     right: List[RealtimeRow]
     
 class RealtimeData(BaseModel):
-    line: Optional[RealtimeLine] = None
+    line: Optional[RealtimePosition] = None
     station: Optional[RealtimeStation] = None
 
 class TimetableRow(BaseModel):
@@ -83,5 +95,5 @@ class SubwayData(BaseModel):
     has_realtimes: bool = False
     has_timetables: bool = False
     realtime_station: Optional[RealtimeStation] = None
-    realtime_line: Optional[RealtimeLine] = None
+    realtime_line: Optional[RealtimePosition] = None
     timetables: Optional[dict[str, Timetable]] = Field(default_factory=dict)
