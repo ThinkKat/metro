@@ -3,14 +3,15 @@ import threading
 import logging
 from datetime import datetime, timedelta
 import warnings
-import requests
 
+import requests
 import pandas as pd
 
 from .utils import op_date, check_holiday, is_next_date
+from .db_manager import DBManager
 from .timetable_db_manager import TimetableDBManager
 from .get_realtime_information import RealtimeInformation
-from .data_model import RealtimeRow, RealtimeStation
+from .data_model import RealtimeRow, RealtimePositionRow, RealtimePosition, RealtimeStation
 
 logger = logging.getLogger("realtime-arrival")
 
@@ -29,8 +30,11 @@ class RealtimeArrival:
         # timetable information
         self.timetable_db_manager = TimetableDBManager()
         
+        # Realtime Positon data
+        self.realtime_position: dict[int, RealtimePosition] = {}
         # Realtime Arrival data
         self.arrival_hashmap: dict[int, list[RealtimeRow]] = {}
+        
         # To convert train status code 
         self.train_status = {
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"
@@ -132,7 +136,7 @@ class RealtimeArrival:
     def _get_realtime_position(self) -> pd.DataFrame:
         api_name = "realtimePosition"
         data = []
-        requested_at = datetime.now()
+        requested_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         logger.info(f"{api_name} Requested_at: {requested_at}")
         
         for line_id in self.lines_id_name:
@@ -163,23 +167,32 @@ class RealtimeArrival:
         
         # convert to dataframe
         rt = pd.DataFrame(data, columns=list(change_cols.keys()))
+        # Requested time
+        rt["requested_at"] = requested_at
+        
         # Error when kyungchun line - kwangwoondae station
         try:
-            rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
+            rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int", "last_station_id": "int"})
         except Exception:
             import traceback
             error = traceback.format_exc()
             logger.error(error)
-
             # 경춘선 광운대
-            mask = (rt["line_id"] == 1067) & (rt["station_name"] == "광운대")
-            rt.loc[mask, "station_id"] = 1067080119
+            mask = (rt["subwayId"] == "1067") & (rt["subwayNm"] == "광운대")
+            rt.loc[mask, "statnId"] = "1067080119"
             
-            mask = (rt["line_id"] == 1067) & (rt["last_station_name"] == "광운대")
-            rt.loc[mask, "last_station_id"] = 1067080119
+            mask = (rt["subwayId"] == "1067") & (rt["statnTnm"] == "광운대")
+            rt.loc[mask, "statnTid"] = "1067080119"
+            
+            # 위 경춘선 광운대 이외의 오류 데이터는 로그에 기록 후 삭제
+            error_data = rt[rt["statnId"].isna() | rt["statnTid"].isna()]
+            if len(error_data) >= 1:
+                logger.warning("There are some error data.")
+                logger.warning(error_data.to_dict(orient="records"))
+                rt = rt.drop(index = error_data.index)
+            
             rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
-            
-            
+        
         # Change the train_id of line 2
         mask = (rt["line_id"] == 1002) & (rt["train_id"].str.startswith(("3", "4", "6", "7", "8", "9")))
         rt.loc[mask, "train_id"] = "2" + rt.loc[mask, "train_id"].str[1:]
@@ -268,7 +281,7 @@ class RealtimeArrival:
         
         return arrival
     
-    def process_arrival_data(self):
+    def process_realtime_data(self):
         # Open HTTP session
         self.open_http_session()
         
@@ -291,16 +304,31 @@ class RealtimeArrival:
         
         arrival = arrival.rename(columns=change_cols).sort_values("stop_order_diff")
         
+        # Realtime Position Data
+        realtime_position_by_line_id = {}
+        for d in realtime_position.to_dict(orient="records"):
+            line_id = d["line_id"]
+            if line_id not in realtime_position_by_line_id:
+                realtime_position_by_line_id[line_id] = [d]
+            else:
+                realtime_position_by_line_id[line_id].append(d)
+        self.realtime_position_df = realtime_position
+        self.realtime_position = {
+            k:RealtimePosition(place = [RealtimePositionRow(**v) for v in values]) for k, values in realtime_position_by_line_id.items()
+        }
+        
         # Add arrival data
         for d in arrival.to_dict(orient="records"):
-            station_id = d["searched_station_id"]
-            d["train_status"] = self.train_status[d["train_status"]]
-            if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
-            d["information_message"] = str(d["stop_order_diff"]) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
-            if station_id not in arrival_hashmap:
-                arrival_hashmap[station_id] = [d]
-            else:
-                arrival_hashmap[station_id].append(d)
+            if not d["line_id"] in [1032, 1077, 1094]:
+                station_id = d["searched_station_id"]
+                d["train_status"] = self.train_status[d["train_status"]]
+                if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
+                d["information_message"] = str(d["stop_order_diff"]) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
+                
+                if station_id not in arrival_hashmap:
+                    arrival_hashmap[station_id] = [d]
+                else:
+                    arrival_hashmap[station_id].append(d)
         
         self.arrival_hashmap = {
             k:[RealtimeRow(**v) for v in values] for k, values in arrival_hashmap.items()
@@ -327,7 +355,6 @@ class IntervalThread:
         self.interval = interval # interval second
         self.is_loop = self.check_time()
         self.t = None
-        self.terminate_thread = False
         
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
@@ -335,6 +362,7 @@ class IntervalThread:
         return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
         
     def get_data(self):
+        self.realtime_db_manager = DBManager("db/realtime.db")
         while True:
             self.is_loop = self.check_time()
             if self.is_loop:
@@ -344,14 +372,47 @@ class IntervalThread:
                 # To prevent unexpected thread termination
                 # Add error log 
                 try:
-                    self.realtime_arrival.process_arrival_data()
+                    # Process realtime data
+                    self.realtime_arrival.process_realtime_data()
+                    
+                    # Save to db   
+                    self.realtime_db_manager.transaction(
+                        query = (
+                            f"""INSERT INTO realtimes VALUES(
+                                :line_id,
+                                :station_id,
+                                :train_id,
+                                :received_at,
+                                :up_down,
+                                :last_station_id,
+                                :train_status,
+                                :express,
+                                :is_last_train,
+                                :requested_at
+                                )"""),
+                        params = self.realtime_arrival.realtime_position_df[
+                            ["line_id", "station_id", "train_id", "received_at", "up_down", "last_station_id", "train_status", "express", "is_last_train", "requested_at"]
+                        ].to_dict(orient="records"),
+                        many = True
+                    )
                 except Exception:
                     import traceback
                     err = traceback.format_exc()
                     logger.error(err)
+
                 
                 logger.info(f"Runtime {time.time()-start:.5f}s... No of Rows: {len(self.realtime_arrival.arrival_hashmap)}")
-            time.sleep(self.interval)
+                time.sleep(self.interval)
+            else:
+                # Terminate loop.
+                cur_datetime = datetime.now()
+                next_start_datetime_str = cur_datetime.date().strftime("%Y-%m-%d") + " 04:50:00" 
+                next_start_datetime = datetime.strptime(next_start_datetime_str, "%Y-%m-%d %H:%M:%S")
+                next_start_interval = (next_start_datetime - cur_datetime).seconds + 1 # Adding 1 seconds to adjust interval time.
+                logger.info(f"Current time: {cur_datetime.strftime("%Y-%m-%d %H:%M:%S")} Loop is terminated. \nAfter {next_start_interval//3600}h {next_start_interval%3600//60}m {next_start_interval%3600%60}s, loop will be restarted.")
+                time.sleep(next_start_interval)
+                
+                logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
     
     def checkIsAlive(self):
         # Check thread is alive
@@ -366,13 +427,17 @@ class IntervalThread:
             logger.info("Thread is already running")
         
     
-
 if __name__ == "__main__":
     # start_total = time.time()
     
-    INTERVAL = 15
+    # INTERVAL = 15
     
-    interval_process = IntervalThread(INTERVAL)
-    interval_process.start()
+    # interval_process = IntervalThread(INTERVAL)
+    # interval_process.start()
     
-    
+    cur_datetime = datetime.now()
+    # next_start_datetime_str = cur_datetime.date().strftime("%Y-%m-%d") + " 04:50:00"
+    # next_start_datetime = datetime.strptime(next_start_datetime_str, "%Y-%m-%d %H:%M:%S")
+    # next_start_interval = (next_start_datetime - cur_datetime)
+    # print(next_start_interval.microseconds)
+    # print(next_start_interval//3600, next_start_interval%3600//60, next_start_interval%3600%60)
