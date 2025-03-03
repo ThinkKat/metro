@@ -406,7 +406,7 @@ class IntervalThread:
             else:
                 # Backup data to another db
                 prev_realtime_db_manager = DBManager("db/prev_realtime.db")
-                response = realtime_db_manager.execute("SELECT * FROM realtimes")
+                response = self.realtime_db_manager.execute("SELECT * FROM realtimes")
                 
                 arraysize = 100000
                 while True:
@@ -417,7 +417,7 @@ class IntervalThread:
                     )
             
                 logger.info("Delete realtimes data")
-                realtime_db_manager.execute("DELETE FROM realtimes")
+                self.realtime_db_manager.execute("DELETE FROM realtimes")
                 
                 # Terminate loop.
                 cur_datetime = datetime.now()
