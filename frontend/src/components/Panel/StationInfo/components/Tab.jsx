@@ -157,8 +157,8 @@ const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
                             {
                                 additionalInfoOpen && (
                                     <div>
-                                        <div className='expected-arrival-time'>예상도착시각 {expArrTimeStr}</div>
-                                        <div className='delayed-time'>{delayedTime}</div>
+                                        {arrival.expected_arrival_time && <div className='expected-arrival-time'>예상도착시각 {expArrTimeStr}</div>}
+                                        {arrival.current_delayed_time && <div className='delayed-time'>{delayedTime}</div>}
                                         <div className='train-id'>열차번호 {arrival.train_id}</div>
                                     </div>
                                 )
