@@ -404,6 +404,21 @@ class IntervalThread:
                 logger.info(f"Runtime {time.time()-start:.5f}s... No of Rows: {len(self.realtime_arrival.arrival_hashmap)}")
                 time.sleep(self.interval)
             else:
+                # Backup data to another db
+                prev_realtime_db_manager = DBManager("db/prev_realtime.db")
+                response = realtime_db_manager.execute("SELECT * FROM realtimes")
+                
+                arraysize = 100000
+                while True:
+                    data = response.fetchmany(arraysize)
+                    if len(data) == 0: break
+                    prev_realtime_db_manager.transaction(
+                        f"INSERT INTO realtimes VALUES ({",".join(["?"]*10)})", params=data, many=True
+                    )
+            
+                logger.info("Delete realtimes data")
+                realtime_db_manager.execute("DELETE FROM realtimes")
+                
                 # Terminate loop.
                 cur_datetime = datetime.now()
                 next_start_datetime_str = cur_datetime.date().strftime("%Y-%m-%d") + " 04:50:00" 
@@ -411,7 +426,6 @@ class IntervalThread:
                 next_start_interval = (next_start_datetime - cur_datetime).seconds + 1 # Adding 1 seconds to adjust interval time.
                 logger.info(f"Current time: {cur_datetime.strftime("%Y-%m-%d %H:%M:%S")} Loop is terminated. \nAfter {next_start_interval//3600}h {next_start_interval%3600//60}m {next_start_interval%3600%60}s, loop will be restarted.")
                 time.sleep(next_start_interval)
-                
                 logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
     
     def checkIsAlive(self):
