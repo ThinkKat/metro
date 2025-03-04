@@ -27,17 +27,6 @@ class ProcessWorker:
                 # Re-init when
                 if not self.run_loop:
                     self.realtime_process.init()
-                    
-                    # # Sleep process to 04:50
-                    # cur_datetime = datetime.now()
-                    # next_start_datetime_str = cur_datetime.date().strftime("%Y-%m-%d") + " 04:50:00" 
-                    # next_start_datetime = datetime.strptime(next_start_datetime_str, "%Y-%m-%d %H:%M:%S")
-                    # next_start_interval = (next_start_datetime - cur_datetime).seconds + 1 # Adding 1 seconds to adjust interval time.
-                    # logger.info(f"Current time: {cur_datetime.strftime("%Y-%m-%d %H:%M:%S")}. After {next_start_interval//3600}h {next_start_interval%3600//60}m {next_start_interval%3600%60}s, process will be restarted.")
-                    
-                    # # Time Sleep
-                    # time.sleep(next_start_interval)
-                    # logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Process is to be started.")
                 
                 # When the client is connected to listeners
                 try:

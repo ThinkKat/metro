@@ -1,11 +1,16 @@
+import os
+
 from fastapi import FastAPI
 
 from packages.timetable_db_manager import TimetableDBManager
 from packages.get_subway_information import get_subway_data
-
 from packages.process_worker import ProcessWorker
 from packages.data_model import StationSearchbar, Station, SubwayData, RealtimeData
 from packages.utils import op_date, check_holiday
+
+# Check whether log file directory exists
+if not os.path.exists('log'):
+    os.mkdir('log')
 
 app = FastAPI()
 
