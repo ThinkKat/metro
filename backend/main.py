@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 
-from packages.config import INTERVAL
 from packages.timetable_db_manager import TimetableDBManager
 from packages.get_subway_information import get_subway_data
-from packages.realtime_arrival import IntervalThread
-from packages.get_realtime_information import RealtimeInformation
+
+from packages.process_worker import ProcessWorker
 from packages.data_model import StationSearchbar, Station, SubwayData, RealtimeData
 from packages.utils import op_date, check_holiday
 
@@ -12,18 +11,16 @@ app = FastAPI()
 
 # Station information from sqlite db
 timetable_db_manager = TimetableDBManager()
-realtime_information = RealtimeInformation()
 
 # Caching realtime data of all stations intervally
-it = IntervalThread(INTERVAL)
-it.start()
+pw = ProcessWorker()
+pw.start()
 
 @app.get("/api/metro")
 async def subways() -> dict:  
     return {
-        "description": "This is the API for metro data", 
-        "interval_thread_alive": it.checkIsAlive()
-    }
+        "description": "This is the API for metro data",
+        "check_thread_alive": pw.check_is_alive()}
 
 @app.get("/api/metro/search/stations")
 async def get_station_information() -> list[StationSearchbar]:
@@ -54,16 +51,16 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
     # Realtime Postion of Lines
     line_info = timetable_db_manager.get_line_info(station_info["line_id"])
     
-    if line_info["line_id"] not in it.realtime_arrival.realtime_position:
+    if line_info["line_id"] not in pw.realtime_process.realtime_position:
         realtime_line_data = {
             "error": "There exists no realtime position information.",
             "line_id": line_info["line_id"]
         }
     else:
-        realtime_line_data = it.realtime_arrival.realtime_position[line_info["line_id"]]
+        realtime_line_data = pw.realtime_process.realtime_position[line_info["line_id"]]
     
     # Realtime Arrival of Stations
-    if station.station_id not in it.realtime_arrival.arrival_hashmap:
+    if station.station_id not in pw.realtime_process.arrival_hashmap:
         # Case that there exists no realtime data
         realtime_station_arrival = {
             "error": "There exists no realtime station information.",
@@ -71,7 +68,7 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
         }
     else:
         # Get data from interval process 
-        realtime_station_arrival = it.realtime_arrival.get_data_by_station_id(station.station_id, station.up, station.down)
+        realtime_station_arrival = pw.realtime_process.get_data_by_station_id(station.station_id, station.up, station.down)
     
     realtime_data = RealtimeData()
     if 'error' not in realtime_line_data:

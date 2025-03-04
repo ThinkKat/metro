@@ -1,5 +1,3 @@
 import os
 
-TIMETABLE_DB_PATH = f"{os.getcwd()}/db/timetable.db"
-API_KEY_DB_PATH = f"{os.getcwd()}/db/api_key.db"
-INTERVAL = 10 # Interval for getting data, unit: second
+TIMETABLE_DB_PATH = f"{os.getcwd()}/db/timetable.db" 
