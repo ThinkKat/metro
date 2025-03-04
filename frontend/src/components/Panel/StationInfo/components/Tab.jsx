@@ -146,7 +146,7 @@ const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
                 realtimeData[direction].map((arrival, index) => {
                     const expArrTime = new Date(arrival.expected_arrival_time);
                     const expArrTimeStr = `${expArrTime.getHours().toString().padStart(2,'0')}:${expArrTime.getMinutes().toString().padStart(2,'0')}`
-                    const delayedTime = arrival.current_delayed_time > 0 && `약 ${parseInt(arrival.current_delayed_time/60)}분 ${parseInt(arrival.current_delayed_time%60)}초 지연`
+                    const delayedTime = (arrival.current_delayed_time && arrival.current_delayed_time > 0) && `약 ${parseInt(arrival.current_delayed_time/60)}분 ${parseInt(arrival.current_delayed_time%60)}초 지연`
 
                     return (
                         <div className = 'data-item-container'>
@@ -158,7 +158,7 @@ const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
                                 additionalInfoOpen && (
                                     <div>
                                         {arrival.expected_arrival_time && <div className='expected-arrival-time'>예상도착시각 {expArrTimeStr}</div>}
-                                        {arrival.current_delayed_time && <div className='delayed-time'>{delayedTime}</div>}
+                                        {(arrival.current_delayed_time && arrival.current_delayed_time > 0) && <div className='delayed-time'>{delayedTime}</div>}
                                         <div className='train-id'>열차번호 {arrival.train_id}</div>
                                     </div>
                                 )
