@@ -7,16 +7,16 @@ case "$1" in
     ;;
   start)
     echo "Starting FastAPI in production mode..."
-    .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config log_conf.yaml & disown
+    .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --log-config log_conf.yaml & disown
     ;;
   terminate)
     echo "Stopping FastAPI server..."
-    kill $(ps -ef | grep 'uvicorn\smain:app\s--host 0.0.0.0' | awk '{print $2}')
+    kill $(ps -ef | grep 'uvicorn\smain:app\s--host\s127.0.0.1\s--port\s8000' | awk '{print $2}')
     ;;
   restart)
     echo "Restarting FastAPI server..."
-    kill $(ps -ef | grep 'uvicorn\smain:app\s--host 0.0.0.0' | awk '{print $2}')
-    .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-config log_conf.yaml & disown
+    kill $(ps -ef | grep 'uvicorn\smain:app\s--host\s127.0.0.1\s--port\s8000' | awk '{print $2}')
+    .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --log-config log_conf.yaml & disown
     ;;
   *)
     echo "Usage: $0 {dev|start|terminate|restart}"
