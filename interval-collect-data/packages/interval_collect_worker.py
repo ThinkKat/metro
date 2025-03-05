@@ -17,6 +17,10 @@ class IntervalCollectWorker:
         self.interval = interval
         self.run_loop = self.check_time()
         self.listener = IPCListner()
+        self.t = None # Set thread to an attribute.
+    
+    def check_thread_is_alive(self):
+        return self.t is not None and self.t.is_alive()
     
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
@@ -112,9 +116,9 @@ class IntervalCollectWorker:
     def start(self):
         """ Running on a new thread
         """
-        t = threading.Thread(target = self.interval_work)
+        self.t = threading.Thread(target = self.interval_work)
         logger.info(f"Start interval work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
-        t.start()
+        self.t.start()
         
 if __name__ == "__main__":
     logging.basicConfig(

@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import os
+import time
 
 from packages.config import INTERVAL
 from packages.interval_collect_worker import IntervalCollectWorker
@@ -50,3 +51,9 @@ if __name__ == "__main__":
     logging.info(f"Start interval collect work... PID: {os.getpid()}")
     interval_collect_worker = IntervalCollectWorker(INTERVAL)
     interval_collect_worker.start()
+    
+    while True:    
+        if not interval_collect_worker.check_thread_is_alive():
+            logger.error("Interval Collect worker thread is not alive.")
+            break
+        time.sleep(1)
