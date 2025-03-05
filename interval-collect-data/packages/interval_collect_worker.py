@@ -69,7 +69,7 @@ class IntervalCollectWorker:
                     realtime_conn.commit()
                     realtime_cur.close()
                     realtime_conn.close()
-                    logger.debug("Success to insert to db")
+                    logger.info(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     logger.error(traceback.format_exc())
                 # TODO: After the listener is connected, interrupt time.sleep
