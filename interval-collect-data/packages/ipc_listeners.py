@@ -7,7 +7,7 @@ from multiprocessing.connection import Listener
 logger = logging.getLogger("realtime-collect")
 
 class IPCListner:
-    def __init__(self, address: tuple[str, int] = ('localhost', 6000)):
+    def __init__(self, address = ('localhost', 6000)):
         self.listener = Listener(address)
         self.data: list = {}
         self.update = False # Sending data only once.
@@ -16,8 +16,11 @@ class IPCListner:
     def open_pipe(self):
         logger.info("Open listener...")
         self.conn = None
-        self.conn = self.listener.accept() # Wait till connecting to client  
-        logger.info("Connected to client")
+        try:
+            self.conn = self.listener.accept() # Wait till connecting to client  
+            logger.info("Connected to client")
+        except Exception:
+            logger.error(traceback.format_exc())
     
     def set_data(self, data: list):
         self.data = data

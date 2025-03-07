@@ -21,11 +21,11 @@ if __name__ == "__main__":
             }
         },
         "handlers":{
-            "sysout":{
-                "formatter": "default",
-                "class": logging.StreamHandler,
-                "stream": "ext://sys.stdout"
-            },
+            # "sysout":{
+            #     "formatter": "default",
+            #     "class": logging.StreamHandler,
+            #     "stream": "ext://sys.stdout"
+            # },
             "file": {
                 "formatter": "default",
                 "class": logging.FileHandler,
@@ -35,13 +35,13 @@ if __name__ == "__main__":
         "loggers": {
             "realtime-collect": {
                 "level": "INFO",
-                "handlers": ["sysout", "file"],
+                "handlers": ["file"],
                 "propagate": False
             }
         },
         "root": {
             "level": "INFO",
-            "handlers": ["sysout", "file"]
+            "handlers": ["file"]
         }
         
     }
@@ -54,6 +54,6 @@ if __name__ == "__main__":
     
     while True:    
         if not interval_collect_worker.check_thread_is_alive():
-            logger.error("Interval Collect worker thread is not alive.")
+            logging.error("Interval Collect worker thread is not alive.")
             break
         time.sleep(1)

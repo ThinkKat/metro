@@ -69,12 +69,15 @@ class IntervalCollectWorker:
                     realtime_conn.commit()
                     realtime_cur.close()
                     realtime_conn.close()
-                    logger.info(f"Success to insert to db. The rows of data is {len(save_data)}")
+                    logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     logger.error(traceback.format_exc())
                 # TODO: After the listener is connected, interrupt time.sleep
                 time.sleep(self.interval)
             else:
+                # Send the signal to notice that the loop is stalled
+                self.listener.set_data([0, 0])
+                
                 # Backup data to another db
                 prev_realtime_conn = sqlite3.connect(PREV_REALTIME_SAVE_DB_PATH)
                 prev_realtime_cur = prev_realtime_conn.cursor()
