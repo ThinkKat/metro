@@ -19,12 +19,13 @@ class RealtimeProcess:
         self.train_status = {
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
         
+        # Connect to socket pipe
+        self.connect()
+        
         # Set data, op_date, timetable data
         self.init()
         
     def init(self):
-        self.connect()
-        
         # timetable information
         self.timetable_db_manager = TimetableDBManager()
         

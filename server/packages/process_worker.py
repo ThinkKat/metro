@@ -11,32 +11,28 @@ logger = logging.getLogger("process-worker")
 class ProcessWorker:
     def __init__(self):
         self.t = None
-        self.run_loop = self.check_time()
         self.realtime_process = RealtimeProcess()
-    
-    def check_time(self):
-        # Maintaining time: 04:50 - 01:30 (tomorrow)
-        dt_str_now = datetime.now().strftime("%H:%M:%S")
-        return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
     
     def interval_work(self):
         while True:
             try:
-                self.run_loop = self.check_time()
-                
-                # Re-init when
-                if not self.run_loop:
-                    self.realtime_process.init()
-                
+                                
                 # When the client is connected to listeners
                 try:
                     position_data = self.realtime_process.client.recv()
                     realtime_arrival_all = self.realtime_process.client.recv()
                     
+                    # [0, 0] means that the collect loop is stalled. 
+                    if isinstance(position_data, int) and position_data == 0:
+                        logger.info("Loop is terminated")
+                        self.realtime_process.init()
+                        continue
+                    
                     # Process data
                     self.realtime_process.process_realtime_data(position_data, realtime_arrival_all)
                 except Exception:
                     logger.info("Client is not connected. Try to connect to listener...")
+                    logger.error(traceback.format_exc())
                     self.realtime_process.connect()
                     
                     # IF client isn't connected, initialize data
@@ -46,8 +42,7 @@ class ProcessWorker:
                         self.realtime_process.init_data()
                     
             except Exception:
-                import traceback
-                print(traceback.format_exc())
+                logger.error(traceback.format_exc())
     
     def check_is_alive(self):
         return self.t is not None and self.t.is_alive()
