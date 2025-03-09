@@ -14,7 +14,9 @@ logger = logging.getLogger("realtime-process")
 address = ('localhost', 6000)
 
 class RealtimeProcess:
-    def __init__(self):
+    def __init__(self, address = address):
+        self.address = address
+        
         # To convert train status code 
         self.train_status = {
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
@@ -29,8 +31,8 @@ class RealtimeProcess:
         # timetable information
         self.timetable_db_manager = TimetableDBManager()
         
+        # Realtime data from interval collection worker
         self.init_data()
-        
         # Set operational date
         self.set_op_date()
         # Load static data: timetable data
@@ -41,7 +43,7 @@ class RealtimeProcess:
     def connect(self):
         # Client
         try:
-            self.client = Client(address)
+            self.client = Client(self.address)
             logger.info("Connected to listener")
         except ConnectionRefusedError:
             # This excpetion is raised when the pipe isn't opening.
@@ -65,6 +67,7 @@ class RealtimeProcess:
         self.op_d_str = self.op_d.strftime("%Y-%m-%d")
         self.next_d_str = self.next_d.strftime("%Y-%m-%d")
         self.day_code = 9 if check_holiday(self.op_d) else 8
+        logger.info(f"{self.op_d}: {"Weekday" if self.day_code == 8 else "Holiday"}")
         
     def set_timetable_data(self):
         self.tb: pd.DataFrame = self._load_timetable_data() 
@@ -262,16 +265,21 @@ class RealtimeProcess:
         return RealtimeStation(**data)
     
 if __name__ == "__main__":
+    logging.basicConfig(filename = "log/test.log",level = logging.INFO)
+    
     rp = RealtimeProcess()
+    count = 0
     while True:
-        try:
-            realtime_arrival_all = rp.client.recv()
-            position_data = rp.client.recv()
-            
-            rp.process_realtime_data(position_data, realtime_arrival_all)
-            
-            print(rp.realtime_position)
-            print(rp.arrival_hashmap)
-        except Exception:
-            import traceback
-            print(traceback.format_exc())
+        rp.op_d = op_date(datetime_ = datetime.now() + timedelta(days=count))
+        rp.next_d = rp.op_d + timedelta(days=1)
+        rp.op_d_str = rp.op_d.strftime("%Y-%m-%d")
+        rp.next_d_str = rp.next_d.strftime("%Y-%m-%d")
+        rp.day_code = 9 if check_holiday(rp.op_d) else 8
+        logger.info(f"{rp.op_d}: {"Weekday" if rp.day_code == 8 else "Holiday"}")
+        
+        rp.set_timetable_data()
+        
+        logger.info(rp.tb["day_code"].unique())
+        
+        time.sleep(5)
+        count += 1
