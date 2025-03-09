@@ -112,18 +112,22 @@ class RealtimeCollect:
             rt = rt.rename(columns=change_cols).astype(dtype)
         except Exception:
             import traceback
-            error = traceback.format_exc()
-            logger.error(error)
+            
             # 경춘선 광운대
-            mask = (rt["subwayId"] == "1067") & (rt["subwayNm"] == "광운대")
+            mask = (rt["subwayId"] == "1067") & (rt["statnNm"] == "광운대")
             rt.loc[mask, "statnId"] = "1067080119"
             
             mask = (rt["subwayId"] == "1067") & (rt["statnTnm"] == "광운대")
             rt.loc[mask, "statnTid"] = "1067080119"
             
+            mask = (rt["subwayId"] == "1067") & (rt["statnNm"] == "용산")
+            rt.loc[mask, "statnId"] = "1063075110" # 경의중앙선 용산역 코드
+            
             # 위 경춘선 광운대 이외의 오류 데이터는 로그에 기록 후 삭제
             error_data = rt[rt["statnId"].isna() | rt["statnTid"].isna()]
             if len(error_data) >= 1:
+                error = traceback.format_exc()
+                logger.error(error)
                 logger.warning("There are some error data.")
                 logger.warning(error_data.to_dict(orient="records"))
                 rt = rt.drop(index = error_data.index)
