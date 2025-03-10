@@ -62,8 +62,10 @@ class RealtimeProcess:
     
     def set_op_date(self):
         # Set operation date
+        # op_date criteria: 04:50 - tomorrow 04:50
         self.op_d = op_date(datetime_ = datetime.now())
         self.next_d = self.op_d + timedelta(days=1)
+        # Formatting
         self.op_d_str = self.op_d.strftime("%Y-%m-%d")
         self.next_d_str = self.next_d.strftime("%Y-%m-%d")
         self.day_code = 9 if check_holiday(self.op_d) else 8

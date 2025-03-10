@@ -22,9 +22,14 @@ class ProcessWorker:
                     position_data = self.realtime_process.client.recv()
                     realtime_arrival_all = self.realtime_process.client.recv()
                     
-                    # [0, 0] means that the collect loop is stalled. 
+                    # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
                         logger.info("Loop is terminated")
+                        continue
+                    
+                    # position_data == 1 means that the collect loop is started. 
+                    if isinstance(position_data, int) and position_data == 1:
+                        logger.info("Loop is started")
                         self.realtime_process.init()
                         continue
                     

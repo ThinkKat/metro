@@ -115,6 +115,9 @@ class IntervalCollectWorker:
                 # Time Sleep
                 time.sleep(next_start_interval)
                 logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
+                
+                # Send the signal to notice that the loop is started
+                self.listener.set_data([1, 1])
         
     def start(self):
         """ Running on a new thread
