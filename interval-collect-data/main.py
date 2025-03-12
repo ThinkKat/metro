@@ -49,16 +49,24 @@ if __name__ == "__main__":
     
     logging.config.dictConfig(config)
     
-    # Check commit
+    """
+        Check Commit
+        Only after commiting all files in metro projects, it is possible to execute process.
+        
+        Commit check -> Not committed -> Raise exception
+                     -> All committed -> Execute process
+                     
+        Before executing process, logging git version using hash and date
+    """
     result = subprocess.run("git status -s".split(), capture_output = True)
     if len(result.stdout.decode()) > 0: 
-        raise Exception(f"There are not committed Files\n{result.stdout.decode()}")
+        raise Exception(f"There are not committed Files\nCurrent directory:{os.getcwd()}\n{result.stdout.decode()}")
     
-    # Logging version
+    # Get git hash and commit date from "git log -n 1" command
     result = subprocess.run("git log -n 1".split(), capture_output = True)
     result_parse = result.stdout.decode().split("\n")
     version = result_parse[0].split()[1] # git hash
-    commit_date = result_parse[2]
+    commit_date = result_parse[2] # commit date
     
     logging.info(
         f"""
