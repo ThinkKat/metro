@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import os
+import subprocess
 import time
 
 from packages.config import INTERVAL
@@ -48,7 +49,22 @@ if __name__ == "__main__":
     
     logging.config.dictConfig(config)
     
-    logging.info(f"Start interval collect work... PID: {os.getpid()}")
+    # Check commit
+    result = subprocess.run("git status -s".split(), capture_output = True)
+    if len(result.stdout.decode()) > 0: 
+        raise Exception(f"There are not committed Files\n{result.stdout.decode()}")
+    
+    # Logging version
+    result = subprocess.run("git log -n 1".split(), capture_output = True)
+    result_parse = result.stdout.decode().split("\n")
+    version = result_parse[0].split()[1] # git hash
+    commit_date = result_parse[2]
+    
+    logging.info(
+        f"""
+        Start interval collect work... PID: {os.getpid()}
+        Version: {f"{git_version}\n{commit_date}"}
+        """)
     interval_collect_worker = IntervalCollectWorker(INTERVAL)
     interval_collect_worker.start()
     
