@@ -63,7 +63,8 @@ if __name__ == "__main__":
     logging.info(
         f"""
         Start interval collect work... PID: {os.getpid()}
-        Version: {f"{version}\n{commit_date}"}
+        Version: {f"{version}"}
+        Commit date: {commit_date}
         """)
     interval_collect_worker = IntervalCollectWorker(INTERVAL)
     interval_collect_worker.start()
