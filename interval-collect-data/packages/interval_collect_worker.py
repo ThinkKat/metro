@@ -3,17 +3,25 @@ import time
 import logging
 import traceback
 import os
-import sqlite3
 from datetime import datetime
 
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.dialects.sqlite import insert
+
 from .ipc_listeners import IPCListner
-from .config import REALTIME_SAVE_DB_PATH, PREV_REALTIME_SAVE_DB_PATH
+from .config import SQLITE_REALTIME_DB_PATH
 from .realtime_collect import RealtimeCollect
+from .sqlalchemy_model import Base, MockRealtime, Realtime
 
 logger = logging.getLogger("realtime-collect")
 
 class IntervalCollectWorker:
     def __init__(self, interval: int):
+        self.db_url = f"sqlite://{SQLITE_REALTIME_DB_PATH}"
+        self.engine = create_engine(self.db_url)
+
         self.interval = interval
         self.run_loop = self.check_time()
         self.listener = IPCListner()
@@ -25,7 +33,8 @@ class IntervalCollectWorker:
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
         dt_str_now = datetime.now().strftime("%H:%M:%S")
-        return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
+        return dt_str_now >= "04:50:00" or dt_str_now <= "00:00:00"
+        # return False
     
     def interval_work(self):
         # Open ipc listener
@@ -34,6 +43,7 @@ class IntervalCollectWorker:
                 
         # Realtime Collect Module
         realtime_collect = RealtimeCollect()
+        Base.metadata.create_all(self.engine)
         
         while True:
             self.run_loop = self.check_time()
@@ -45,30 +55,23 @@ class IntervalCollectWorker:
                     # Send data
                     self.listener.set_data([realtime_collect.realtime_position, realtime_collect.realtime_arrival_all])
                     
-                    # Save data
-                    realtime_conn = sqlite3.connect(REALTIME_SAVE_DB_PATH)
-                    realtime_cur = realtime_conn.cursor()
-                    save_data = realtime_collect.realtime_position[
-                        ["line_id", "station_id", "train_id", "received_at", "up_down", "last_station_id", "train_status", "express", "is_last_train", "requested_at"]    
-                    ].to_dict(orient="records")
-                    realtime_cur.executemany(
-                        """INSERT INTO realtimes VALUES(
-                            :line_id,
-                            :station_id,
-                            :train_id,
-                            :received_at,
-                            :up_down,
-                            :last_station_id,
-                            :train_status,
-                            :express,
-                            :is_last_train,
-                            :requested_at
-                        )""",
-                        save_data
-                    )
-                    realtime_conn.commit()
-                    realtime_cur.close()
-                    realtime_conn.close()
+                    # Save data 
+                    with Session(self.engine) as session:
+                        data = realtime_collect.realtime_position
+                        data["received_at"] = pd.to_datetime(data["received_at"], format="%Y-%m-%d %H:%M:%S")
+                        data["requested_at"] = pd.to_datetime(data["requested_at"], format="%Y-%m-%d %H:%M:%S")
+                        
+                        save_data = data[
+                            ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at"]    
+                        ].to_dict(orient="records")
+                        insert_stmt = insert(Realtime).values(save_data)
+                        upsert_stmt = insert_stmt.on_conflict_do_update(
+                            index_elements=['line_id', 'station_id', 'train_id', 'train_status'],
+                            set_={"received_at": insert_stmt.excluded.received_at, "requested_at": insert_stmt.excluded.requested_at}
+                        )
+                        session.execute(upsert_stmt)
+                        session.commit()
+
                     logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     logger.error(traceback.format_exc())
@@ -77,33 +80,6 @@ class IntervalCollectWorker:
             else:
                 # Send the signal to notice that the loop is stalled
                 self.listener.set_data([0, 0])
-                
-                # Backup data to another db
-                prev_realtime_conn = sqlite3.connect(PREV_REALTIME_SAVE_DB_PATH)
-                prev_realtime_cur = prev_realtime_conn.cursor()
-                
-                realtime_conn = sqlite3.connect(REALTIME_SAVE_DB_PATH)
-                realtime_cur = realtime_conn.cursor()
-                response = realtime_cur.execute("SELECT * FROM realtimes")
-                
-                arraysize = 100000
-                total_rows = 0
-                while True:
-                    data = response.fetchmany(arraysize)
-                    total_rows += len(data)
-                    if len(data) == 0: break
-                    prev_realtime_cur.executemany(
-                        f"INSERT INTO prev_realtimes VALUES ({",".join(["?"]*10)})", data)
-                prev_realtime_conn.commit()
-                prev_realtime_cur.close()
-                prev_realtime_conn.close()
-                logger.debug(f"Save realtime db to prev_realtime db. Total rows of data: {total_rows}")
-                
-                realtime_cur.execute("DELETE FROM realtimes")
-                realtime_conn.commit()
-                realtime_cur.close()
-                realtime_conn.close()
-                logger.debug("Delete realtimes data")
                 
                 # Terminate loop.
                 cur_datetime = datetime.now()

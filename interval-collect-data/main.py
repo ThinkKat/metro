@@ -22,11 +22,6 @@ if __name__ == "__main__":
             }
         },
         "handlers":{
-            # "sysout":{
-            #     "formatter": "default",
-            #     "class": logging.StreamHandler,
-            #     "stream": "ext://sys.stdout"
-            # },
             "file": {
                 "formatter": "default",
                 "class": logging.FileHandler,
@@ -68,6 +63,7 @@ if __name__ == "__main__":
     version = result_parse[0].split()[1] # git hash
     commit_date = result_parse[2] # commit date
     
+    # Start process
     logging.info(
         f"""
         Start interval collect work... PID: {os.getpid()}
