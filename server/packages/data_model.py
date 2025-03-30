@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from datetime import datetime, time
 
 class Line(BaseModel):
     line_id: int
@@ -47,7 +48,7 @@ class RealtimeRow(BaseModel):
     last_station_name: str
     searched_station_name: str | None = None
     cur_station_name: str 
-    received_at: str # YYYY-MM-DD HH:MM:SS
+    received_at: datetime # YYYY-MM-DD HH:MM:SS
     train_status: str
     express: int
     express_non_stop: int|None = None
@@ -58,8 +59,8 @@ class RealtimeRow(BaseModel):
     expected_arrival_time: str|None = None 
     stop_order_diff: int|None = None # 남은 정차역 수
     information_message: str|None = None
-    searched_station_department_time: str|None = None # of searched station 
-    searched_station_arrival_time: str|None = None # of searched station
+    searched_station_department_time: time|None = None # of searched station 
+    searched_station_arrival_time: time|None = None # of searched station
 
 class RealtimePosition(BaseModel):
     place: List[RealtimePositionRow]
@@ -76,8 +77,8 @@ class TimetableRow(BaseModel):
     train_id: str
     first_station_name: str
     last_station_name: str
-    arrival_time: str | None  # "HH:mm:ss"
-    department_time: str | None  # "HH:mm:ss"
+    arrival_time: time | None  # "HH:mm:ss"
+    department_time: time | None  # "HH:mm:ss"
     up_down: int
     express: int  # 0 = 일반, 1 = 급행
     sort_hour_key: int

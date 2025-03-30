@@ -4,6 +4,12 @@ import logging
 import traceback
 from datetime import datetime
 
+import pandas as pd
+from sqlalchemy import create_engine, text, insert
+from sqlalchemy.orm import sessionmaker
+
+from .config import SQLITE_REALTIME_DB_PATH, POSTGRESQL_METRO_DB_URL
+from .sqlalchemy_model import Delay
 from .realtime_process import RealtimeProcess
 
 logger = logging.getLogger("process-worker")
@@ -15,8 +21,7 @@ class ProcessWorker:
     
     def interval_work(self):
         while True:
-            try:
-                                
+            try:            
                 # When the client is connected to listeners
                 try:
                     position_data = self.realtime_process.client.recv()
@@ -25,6 +30,33 @@ class ProcessWorker:
                     # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
                         logger.info("Loop is terminated")
+                        # Get all realtime data
+                        sqlite_session = sessionmaker(bind = create_engine(f"sqlite://{SQLITE_REALTIME_DB_PATH}"))()
+                        select_stmt = text("SELECT * FROM realtimes")
+                        response = sqlite_session.execute(select_stmt)
+                        df = pd.DataFrame(response.fetchall(), columns = response.keys())
+
+                        # Caculate delay time
+                        delay_data = self.realtime_process.get_delay_data(df)
+                        delay_data["op_date"] = self.realtime_process.op_d_str
+                        delay_data["day_code"] = self.realtime_process.day_code
+                        delay_data = delay_data.astype({"first_last": "Int16", "stop_no": "Int16"})
+                        delay_data["stop_no"] = delay_data["stop_no"].fillna(-1)
+                        delay_data["delayed_time"] = delay_data["delayed_time"].dt.total_seconds()
+                        
+                        # Insert delay data
+                        postgresql_session = sessionmaker(bind = create_engine(f"postgresql://{POSTGRESQL_METRO_DB_URL}"))()
+                        usecols = ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at", "day_code", "first_last", "stop_no", "delayed_time", "op_date"]
+                        delay_data = delay_data[usecols].to_dict(orient="records")
+                        for d in delay_data:
+                            insert_stmt = insert(Delay).values(d)
+                            postgresql_session.execute(insert_stmt)
+                        postgresql_session.commit()
+                        
+                        # Delete realtimes
+                        delete_stmt = text("DELETE FROM realtimes")
+                        sqlite_session.execute(delete_stmt)
+                        sqlite_session.commit()
                         continue
                     
                     # position_data == 1 means that the collect loop is started. 

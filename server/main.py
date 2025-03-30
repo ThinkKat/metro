@@ -2,8 +2,8 @@ import os
 
 from fastapi import FastAPI
 
-from packages.timetable_db_manager import TimetableDBManager
-from packages.get_subway_information import get_subway_data
+from packages.metro_info_manager import MetroInfoManager
+from packages.get_metro_information import get_metro_data
 from packages.process_worker import ProcessWorker
 from packages.data_model import StationSearchbar, Station, SubwayData, RealtimeData
 from packages.utils import op_date, check_holiday
@@ -15,7 +15,7 @@ if not os.path.exists('log'):
 app = FastAPI()
 
 # Station information from sqlite db
-timetable_db_manager = TimetableDBManager()
+metro_info_manager = MetroInfoManager()
 
 # Caching realtime data of all stations intervally
 pw = ProcessWorker()
@@ -29,11 +29,12 @@ async def subways() -> dict:
 
 @app.get("/api/metro/search/stations")
 async def get_station_information() -> list[StationSearchbar]:
-    return timetable_db_manager.get_stations_searchbar()
+    return metro_info_manager.get_stations_searchbar()
 
 @app.get("/api/metro/information/{station_public_code}")
 async def get_subway_data_by_public_code(station_public_code: str) -> SubwayData|dict:
-    subway_data = get_subway_data(station_public_code)
+    
+    subway_data = get_metro_data(op_date(), station_public_code)
     # If subway_data has error message
     if "error" in subway_data:
         return subway_data
@@ -41,7 +42,7 @@ async def get_subway_data_by_public_code(station_public_code: str) -> SubwayData
 
 @app.get("/api/metro/information/realtimes/{station_public_code}")
 async def get_realtimes_data_by_public_code(station_public_code: str) -> RealtimeData|dict:
-    station_info = timetable_db_manager.get_station_info(station_public_code)
+    station_info = metro_info_manager.get_station_info(station_public_code)
     # If station_info has error message
     if "error" in station_info:
         return station_info 
@@ -54,7 +55,7 @@ async def get_realtimes_data_by_public_code(station_public_code: str) -> Realtim
         }
         
     # Realtime Postion of Lines
-    line_info = timetable_db_manager.get_line_info(station_info["line_id"])
+    line_info = metro_info_manager.get_line_info(station_info["line_id"])
     
     if line_info["line_id"] not in pw.realtime_process.realtime_position:
         realtime_line_data = {

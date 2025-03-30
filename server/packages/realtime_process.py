@@ -5,10 +5,12 @@ from datetime import datetime, timedelta
 from multiprocessing.connection import Client
 
 import pandas as pd
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.orm import Session
 
 from .utils import op_date, check_holiday, is_next_date
-from .timetable_db_manager import TimetableDBManager
 from .data_model import RealtimeRow, RealtimePositionRow, RealtimePosition, RealtimeStation
+from .config import SQLITE_REALTIME_DB_PATH, POSTGRESQL_METRO_DB_URL
 
 logger = logging.getLogger("realtime-process")
 address = ('localhost', 6000)
@@ -28,9 +30,6 @@ class RealtimeProcess:
         self.init()
         
     def init(self):
-        # timetable information
-        self.timetable_db_manager = TimetableDBManager()
-        
         # Realtime data from interval collection worker
         self.init_data()
         # Set operational date
@@ -77,27 +76,33 @@ class RealtimeProcess:
     def _load_timetable_data(self) -> pd.DataFrame:
         # load timetable data
         # using self attributes
-        data = self.timetable_db_manager.execute("""
-                SELECT 
-                    tb.*,
-                    s.station_id,
-                    s.station_name
-                FROM final_timetable tb
-                INNER JOIN stations s
-                ON tb.line_id = s.line_id
-                AND tb.station_public_code = s.station_public_code
-                AND tb.day_code = :day_code
-            """,
-            {"day_code": self.day_code}
-        )
-        columns = self.timetable_db_manager.get_column_names()
-        tb = pd.DataFrame(data, columns=columns).drop(columns = "train_id") # Using instead of realtime_train_id column
+        db_url = f"postgresql://{POSTGRESQL_METRO_DB_URL}"
+        engine = create_engine(db_url)
+        with Session(engine) as session:
+            # load timetable data
+            # using self attributes
+            data = session.execute(text("""
+                    SELECT 
+                        tb.*,
+                        s.station_id,
+                        s.station_name
+                    FROM timetables tb
+                    INNER JOIN stations s
+                    ON tb.line_id = s.line_id
+                    AND tb.station_public_code = s.station_public_code
+                    WHERE ((tb.updated_at <= :op_date AND tb.end_date > :op_date) OR (tb.end_date IS NULL))
+                    AND tb.day_code = :day_code
+                """),
+                {"op_date": self.op_d_str, "day_code": self.day_code}
+            )
+        tb = pd.DataFrame([r for r in data.fetchall()], columns = data.keys())
+        tb = tb.drop(columns = ["train_id"])
         
         # Convert time to datetime
         tb["arrival_datetime"] = tb["arrival_time"]
-        tb.loc[~tb["arrival_time"].isna(), "arrival_datetime"] = tb.loc[~tb["arrival_time"].isna(),"arrival_time"].apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
+        tb.loc[~tb["arrival_time"].isna(), "arrival_datetime"] = tb.loc[~tb["arrival_time"].isna(),"arrival_time"].astype("string").apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
         tb["department_datetime"] = tb["department_time"]
-        tb.loc[~tb["department_time"].isna(), "department_datetime"] = tb.loc[~tb["department_time"].isna(), "department_time"].apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
+        tb.loc[~tb["department_time"].isna(), "department_datetime"] = tb.loc[~tb["department_time"].isna(), "department_time"].astype("string").apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
         
         return tb
     
@@ -129,15 +134,16 @@ class RealtimeProcess:
                 data_hashmap[station_id].append(new_row)
         return data_hashmap
     
-    def _calculate_arrival_data(self, realtime_position: pd.DataFrame) -> pd.DataFrame:
+    def _calculate_delay_time(self, realtime_position: pd.DataFrame) -> pd.DataFrame:
         # Data join
         data_join = pd.merge(
-            realtime_position[["line_id", "station_id", "train_id", "received_at", "train_status"]],
+            realtime_position[["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at"]],
             self.tb,
             left_on = ["line_id", "train_id", "station_id"],
             right_on = ["line_id", "realtime_train_id", "station_id"],
-            how = "inner" # 정보 파싱 가능한 데이터만
+            how = "left" # 정보 파싱 가능한 데이터만
         )
+        
         # Modify date value
         data_join["received_at"] = data_join["received_at"].str.split(" ", expand=True)[1].apply(lambda x : self.next_d_str + " " + x if is_next_date(x) else self.op_d_str + " " + x)
 
@@ -162,13 +168,18 @@ class RealtimeProcess:
                 = received_at - arrival_datetime + 30s
                 = delayed_time of arrival + 30s
         """
-        data_join.loc[data_join["train_status"]==0, "delayed_time"] += pd.to_timedelta(30, unit = 's') 
-        
-        
+        data_join.loc[data_join["train_status"]==0, "delayed_time"] += pd.to_timedelta(30, unit = 's')
+        return data_join
+    
+    def get_delay_data(self, realtime_position: pd.DataFrame) -> pd.DataFrame:
+        # public method of getting delay data
+        return self._calculate_delay_time(realtime_position)
+    
+    def _calculate_arrival_data(self, realtime_position: pd.DataFrame) -> pd.DataFrame:
         # Join next timetable data
         # Next suffix means searched station.
         arrival = pd.merge(
-            data_join,
+            realtime_position,
             self.tb,
             left_on = ["line_id", "train_id"],
             right_on = ["line_id", "realtime_train_id"],
@@ -213,8 +224,13 @@ class RealtimeProcess:
             "express_non_stop_next": "searched_express_non_stop"
         }
         
+        change_types = {
+            "searched_station_department_time": "string",
+            "searched_station_arrival_time": "string",
+        }
+        
         # Sort values bt stop_order_diff
-        arrival = arrival.rename(columns=change_cols).sort_values("stop_order_diff")
+        arrival = arrival.rename(columns=change_cols).astype(change_types).sort_values("stop_order_diff")
         
         return arrival
     
@@ -222,7 +238,11 @@ class RealtimeProcess:
         # 1032, 1077, 1094 data
         
         if position_data is not None:
-            arrival: pd.DataFrame = self._calculate_arrival_data(position_data)
+            # Convert Type
+            position_data["received_at"] = position_data["received_at"].astype("string")
+            
+            delay: pd.DataFrame = self._calculate_delay_time(position_data)
+            arrival: pd.DataFrame = self._calculate_arrival_data(delay)
             # Realtime Position Data
             realtime_position_by_line_id = {}
             for d in position_data.to_dict(orient="records"):

@@ -8,5 +8,6 @@
 **/dist
 **/log
 **/*.log
+**/*.csv
 **/assets
 **/conf
