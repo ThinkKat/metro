@@ -10,13 +10,12 @@ from sqlalchemy.orm import Session
 
 from .utils import op_date, check_holiday, is_next_date
 from .data_model import RealtimeRow, RealtimePositionRow, RealtimePosition, RealtimeStation
-from .config import SQLITE_REALTIME_DB_PATH, POSTGRESQL_METRO_DB_URL
+from .config import POSTGRESQL_METRO_DB_URL, UDS_ADDRESS
 
 logger = logging.getLogger("realtime-process")
-address = ('localhost', 6000)
 
 class RealtimeProcess:
-    def __init__(self, address = address):
+    def __init__(self, address = UDS_ADDRESS):
         self.address = address
         
         # To convert train status code 
@@ -46,6 +45,11 @@ class RealtimeProcess:
             logger.info("Connected to listener")
         except ConnectionRefusedError:
             # This excpetion is raised when the pipe isn't opening.
+            logger.error(traceback.format_exc())
+            time.sleep(5)
+            self.client = None
+        except FileNotFoundError:
+            # This exception is raised when the uds(AF_UNIX) files doesn't exists
             logger.error(traceback.format_exc())
             time.sleep(5)
             self.client = None
@@ -281,9 +285,9 @@ class RealtimeProcess:
         realtime_arrival = self.arrival_hashmap[station_id]
         for row in realtime_arrival:
             if row.up_down == 0:
-                data[up].append(row)
+                data[up.split("_")[0]].append(row)
             else:
-                data[down].append(row)
+                data[down.split("_")[0]].append(row)
         return RealtimeStation(**data)
     
 if __name__ == "__main__":
