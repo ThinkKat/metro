@@ -1,7 +1,7 @@
 import logging
 import time
 import traceback
-import threading
+import os
 from multiprocessing.connection import Listener
 
 from .config import UDS_ADDRESS
@@ -10,6 +10,10 @@ logger = logging.getLogger("realtime-collect")
 
 class IPCListner:
     def __init__(self, address = UDS_ADDRESS):
+        # Check whether path exists
+        if os.path.exists(address):
+            os.remove(address)
+        
         self.listener = Listener(address)
         self.data: list = {}
         self.update = False # Sending data only once.
