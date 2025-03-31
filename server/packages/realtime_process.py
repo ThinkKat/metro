@@ -267,7 +267,7 @@ class RealtimeProcess:
                     station_id = d["searched_station_id"]
                     d["train_status"] = self.train_status[d["train_status"]]
                     if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
-                    d["information_message"] = str(d["stop_order_diff"]) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
+                    d["information_message"] = str(int(d["stop_order_diff"])) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
                     
                     if station_id not in arrival_hashmap:
                         arrival_hashmap[station_id] = [d]
