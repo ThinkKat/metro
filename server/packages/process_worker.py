@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text, insert
 from sqlalchemy.orm import sessionmaker
 
-from .config import SQLITE_REALTIME_DB_PATH, POSTGRESQL_METRO_DB_URL
+from .config import SQLITE_REALTIME_DB_PATH, SQLITE_TEST_REALTIME_DB_PATH, POSTGRESQL_METRO_DB_URL
 from .sqlalchemy_model import Delay
 from .realtime_process import RealtimeProcess
 
@@ -60,13 +60,14 @@ class ProcessWorker:
                         continue
                     
                     # position_data == 1 means that the collect loop is started. 
-                    if isinstance(position_data, int) and position_data == 1:
+                    elif isinstance(position_data, int) and position_data == 1:
                         logger.info("Loop is started")
                         self.realtime_process.init()
                         continue
                     
-                    # Process data
-                    self.realtime_process.process_realtime_data(position_data, realtime_arrival_all)
+                    else:
+                        # Process data
+                        self.realtime_process.process_realtime_data(position_data, realtime_arrival_all)
                 except Exception:
                     logger.info("Client is not connected. Try to connect to listener...")
                     logger.error(traceback.format_exc())

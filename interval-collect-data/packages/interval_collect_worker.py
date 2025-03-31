@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.dialects.sqlite import insert
 
 from .ipc_listeners import IPCListner
-from .config import SQLITE_REALTIME_DB_PATH
+from .config import SQLITE_REALTIME_DB_PATH, SQLITE_TEST_REALTIME_DB_PATH
 from .realtime_collect import RealtimeCollect
 from .sqlalchemy_model import Base, MockRealtime, Realtime
 
@@ -33,8 +33,7 @@ class IntervalCollectWorker:
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
         dt_str_now = datetime.now().strftime("%H:%M:%S")
-        return dt_str_now >= "04:50:00" or dt_str_now <= "00:00:00"
-        # return False
+        return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
     
     def interval_work(self):
         # Open ipc listener
