@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Date, Float, TIMESTAMP, PrimaryKeyConstraint
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Date, Time, Float, TIMESTAMP, PrimaryKeyConstraint
 from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
@@ -31,8 +31,8 @@ class Stations(Base):
     right_station_public_code = Column(String(20))
     left_station_name = Column(String(40))
     right_station_name = Column(String(40))
-    left = Column(Integer, nullable=False)
-    right = Column(Integer, nullable=False)
+    left_direction = Column(Integer, nullable=False)
+    right_direction = Column(Integer, nullable=False)
     
 class Transfers(Base):
     __tablename__ = "transfers"
@@ -60,6 +60,31 @@ class Connections(Base):
     __table_args__ = (
         PrimaryKeyConstraint('from_station_public_code', 'to_station_public_code'),
     )
+    
+class Timetables(Base):
+    __tablename__ = "timetables"
+    
+    line_id = Column(Integer, nullable=False)
+    train_id = Column(String(10), nullable=False)
+    first_station_name = Column(String(20), nullable = False)
+    last_station_name = Column(String(20), nullable = False)
+    first_last = Column(Integer, nullable = False)
+    station_public_code = Column(String(10), nullable=False)
+    day_code = Column(Integer, nullable=False)
+    up_down = Column(Boolean, nullable=False)
+    express = Column(Boolean, nullable=False)
+    arrival_time = Column(Time)
+    department_time = Column(Time)
+    updated_at = Column(Date, nullable=False)
+    end_date = Column(Date)
+    realtime_train_id = Column(String(10), nullable=False)
+    stop_no = Column(Integer, nullable=False)
+    express_non_stop = Column(Boolean, nullable=False)
+    
+    __table_args__ = (
+        PrimaryKeyConstraint('line_id', 'train_id', 'station_public_code', 'day_code', "stop_no"),
+    )
+    
 
 class MockRealtime(Base):
     __tablename__ = "test_realtimes"
