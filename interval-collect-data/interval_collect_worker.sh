@@ -2,15 +2,15 @@
 
 case "$1" in
   start)
-    echo "Starting FastAPI in production mode..."
+    echo "Starting Interval-Collect-Worker in production mode..."
     .venv/bin/python main.py & disown
     ;;
   terminate)
-    echo "Stopping FastAPI server..."
+    echo "Stopping Interval-Collect-Worker..."
     kill $(ps -ef | grep '.venv/bin/python\smain.py' | awk '{print $2}')
     ;;
   restart)
-    echo "Restarting FastAPI server..."
+    echo "Restarting Interval-Collect-Worker..."
     kill $(ps -ef | grep '.venv/bin/python\smain.py' | awk '{print $2}')
     .venv/bin/python main.py & disown
     ;;
