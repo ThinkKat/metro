@@ -19,8 +19,8 @@ class Station(BaseModel):
     station_id: int # If station_id is 0, there are no realtime information
     station_name: str
     request_station_name: str|None
-    left: int
-    right: int
+    left_direction: int
+    right_direction: int
     up: str
     down: str
 

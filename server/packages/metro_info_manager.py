@@ -56,12 +56,12 @@ class MetroInfoManager():
         # If there not exists station information
         if row is not None:
             station_info = {c:row[i] for i, c in enumerate(columns)}
-            if station_info["left"] == 0:
-                station_info["up"] = "left"
-                station_info["down"] = "right"
+            if station_info["left_direction"] == 0:
+                station_info["up"] = "left_direction"
+                station_info["down"] = "right_direction"
             else:
-                station_info["up"] = "right"
-                station_info["down"] = "left"
+                station_info["up"] = "right_direction"
+                station_info["down"] = "left_direction"
             return station_info
         else:
             return {

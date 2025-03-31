@@ -61,9 +61,9 @@ def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
         t["sort_minute_key"] = t["department_time"].minute if t["department_time"] is not None else 99
         
         if t["day_code"] == 8:
-            timetable["weekday"][station.__getattribute__(direction)].append(TimetableRow(**t))
+            timetable["weekday"][station.__getattribute__(direction).split("_")[0]].append(TimetableRow(**t))
         else:
-            timetable["holiday"][station.__getattribute__(direction)].append(TimetableRow(**t))
+            timetable["holiday"][station.__getattribute__(direction).split("_")[0]].append(TimetableRow(**t))
     
     timetables = {k:Timetable(**v) for k, v in timetable.items()} 
     has_timetables = len(timetable_info) != 0
