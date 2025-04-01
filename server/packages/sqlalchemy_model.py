@@ -37,7 +37,7 @@ class Stations(Base):
 class Transfers(Base):
     __tablename__ = "transfers"
     
-    transfer_station_code = Column(String(10))
+    transfer_station_code = Column(String(10), nullable=False)
     station_name = Column(String(20), nullable=False)
     line_id = Column(Integer, nullable=False)
     line_name = Column(String(20), nullable=False)
@@ -127,7 +127,7 @@ class Delay(Base):
     first_last = Column(Integer, nullable=True)
     stop_no = Column(Integer, nullable=False)
     op_date = Column(Date, nullable=False)
-    delayed_time = Column(Float, nullable=True)
+    delayed_time = Column(Float)
 
     __table_args__ = (
         PrimaryKeyConstraint('line_id', 'station_id', 'train_id', 'train_status', 'stop_no' ,'op_date'),
