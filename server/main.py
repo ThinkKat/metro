@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from packages.metro_info_manager import MetroInfoManager
 from packages.get_metro_information import get_metro_data
 from packages.process_worker import ProcessWorker
-from packages.data_model import StationSearchbar, Station, SubwayData, RealtimeData
+from packages.data_model import StationSearchbarList, Station, StationInfo, RealtimeData
 from packages.utils import op_date, check_holiday
 
 # Check whether log file directory exists
@@ -28,11 +28,11 @@ async def subways() -> dict:
         "check_thread_alive": pw.check_is_alive()}
 
 @app.get("/api/metro/search/stations")
-async def get_station_information() -> list[StationSearchbar]:
+async def get_station_information() -> list[StationSearchbarList]:
     return metro_info_manager.get_stations_searchbar()
 
 @app.get("/api/metro/information/{station_public_code}")
-async def get_subway_data_by_public_code(station_public_code: str) -> SubwayData|dict:
+async def get_subway_data_by_public_code(station_public_code: str) -> StationInfo|dict:
     
     subway_data = get_metro_data(op_date(), station_public_code)
     # If subway_data has error message
