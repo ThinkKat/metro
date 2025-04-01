@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 
 from .sqlalchemy_model import Base, MockRealtime, Delay
 from .config import POSTGRESQL_METRO_DB_URL
-from .data_model import StationSearchbar
+from .data_model import StationSearchbarList
 
 class MetroInfoManager():
     def __init__(self,):
         self.db_url = f"postgresql://{POSTGRESQL_METRO_DB_URL}"
         self.engine = create_engine(self.db_url)
     
-    def get_stations_searchbar(self) -> list[StationSearchbar]:
+    def get_stations_searchbar(self) -> list[StationSearchbarList]:
         """Get all searchbar station
 
         Returns:
@@ -32,7 +32,7 @@ class MetroInfoManager():
                 )
             )
             columns = response.keys()
-            station_searchbar = [{c:row[i] for i, c in enumerate(columns)} for row in response.fetchall()]
+            station_searchbar = [{c:StationSearchbarList(**row[i]) for i, c in enumerate(columns)} for row in response.fetchall()]
         return station_searchbar
     
     def get_station_info(self, station_public_code: str) -> dict:

@@ -1,6 +1,7 @@
 import logging
 import traceback
 import time
+import re
 from datetime import datetime, timedelta
 from multiprocessing.connection import Client
 
@@ -115,10 +116,38 @@ class RealtimeProcess:
         data_hashmap: dict[int, list] = {}
         for row in data:
             # Filtering necessary data
+            # Necessary Line data: 1032, 1077, 1094
             if int(row["subwayId"]) not in [1032, 1077, 1094]: continue
             
             station_id = int(row["statnId"])
+            
             # Extract necessary attributes
+            information_message = row["arvlMsg2"]
+            """
+                2 types of message 
+                1. OO OO 
+                    The first type of message is composed to 2 words splited by space.
+                    예: 당역 도착, 전역 출발
+                    Spliting: ["당역", "도착"], ["전역", "출발"]
+                2. [n]OO OO (current_station_name)
+                    The second type of message is composed to 3 words splited by space.
+                    예: [2]번째 도착 (양재시민의 숲)
+                    Spliting: ["[2]번쩨", "도착", "(양재시민의 숲)"]
+            """
+            partial_message = information_message.split(maxsplit = 2)
+            try:
+                if len(partial_message) == 2:
+                    if partial_message[0] == "당역":
+                        stop_order_diff = 0
+                    else:
+                        stop_order_diff = 1
+                else:
+                    stop_order_diff = int(re.search(r'[0-9]+', partial_message[0]).group(0))
+                    information_message = f"{stop_order_diff}전역 {partial_message[1]}"
+            except:
+                logger.error(traceback.format_exc())
+                stop_order_diff = None
+            
             new_row = {
                 "train_id": row["btrainNo"],
                 "last_station_name": row["bstatnNm"],
@@ -129,7 +158,8 @@ class RealtimeProcess:
                 "train_status": self.train_status[int(row["arvlCd"])],
                 "up_down": 0 if row["updnLine"] == "상행" else 1,
                 "expected_left_time": int(row["barvlDt"]),
-                "information_message": row["arvlMsg2"]
+                "stop_order_diff": stop_order_diff,
+                "information_message": information_message
             }
             
             if station_id not in data_hashmap:
@@ -283,6 +313,8 @@ class RealtimeProcess:
         data = {"left": [], "right": []}
         # Get data by id
         realtime_arrival = self.arrival_hashmap[station_id]
+        
+        # up: "left_direction", down: "right_direction"
         for row in realtime_arrival:
             if row.up_down == 0:
                 data[up.split("_")[0]].append(row)

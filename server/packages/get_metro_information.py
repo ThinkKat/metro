@@ -3,11 +3,11 @@ import time
 from operator import attrgetter
 
 from .metro_info_manager import MetroInfoManager
-from .data_model import Line, Station, AdjacentStation, TransferLine, TimetableRow, Timetable, SubwayData
+from .data_model import Line, Station, AdjacentStation, TransferLine, TimetableRow, Timetable, StationInfo
 
 metro_info_manager = MetroInfoManager()
 
-def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
+def get_metro_data(op_date: str, station_public_code: str) -> StationInfo|dict:
     
     # Station Info
     station_info = metro_info_manager.get_station_info(station_public_code)
@@ -31,6 +31,7 @@ def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
         adj_station = AdjacentStation(**station_info, up_down = c["up_down"])
         adj_stations[c["direction"]].append(adj_station)
 
+    # Create transfer data
     transfer_info = metro_info_manager.get_transfer_lines(line_id, station_public_code)
     # Add current line
     transfer_lines = [TransferLine(**line_info, station_public_code = station.station_public_code)]
@@ -40,7 +41,8 @@ def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
         transfer_line = TransferLine(**line_info, station_public_code = ts["station_public_code"])
         transfer_lines.append(transfer_line)
     transfer_lines = sorted(transfer_lines, key = lambda x : x.line_id)
-        
+    
+    # Create timetable info
     timetable_info = metro_info_manager.get_timetable(op_date, station_public_code)
     
     timetable = {
@@ -54,12 +56,14 @@ def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
         }
     }
     
+    # Get sort key
     for t in timetable_info:
         direction = "up" if t["up_down"] == 0 else "down"
         t["sort_hour_key"] = t["department_time"].hour if t["department_time"] is not None else 99
         t["sort_hour_key"] = t["sort_hour_key"] + 24 if t["sort_hour_key"] < 5 else t["sort_hour_key"]
         t["sort_minute_key"] = t["department_time"].minute if t["department_time"] is not None else 99
         
+        # station.__getattribute__(direction) is "left_direction" or "right_direction"
         if t["day_code"] == 8:
             timetable["weekday"][station.__getattribute__(direction).split("_")[0]].append(TimetableRow(**t))
         else:
@@ -73,14 +77,14 @@ def get_metro_data(op_date: str, station_public_code: str) -> SubwayData|dict:
     timetables["holiday"].left = sorted(timetables["holiday"].left, key=attrgetter("sort_hour_key", "sort_minute_key"))
     timetables["holiday"].right = sorted(timetables["holiday"].right, key=attrgetter("sort_hour_key", "sort_minute_key"))
       
-    subway_data = SubwayData(
+    subway_data = StationInfo(
         line= line,
         station=station,
         adjacent_stations=adj_stations,
         transfer_lines=transfer_lines,
         has_realtimes=station.station_id != 0,
         has_timetables=has_timetables,
-        realtimes={},
+        realtimes={}, # Realtimes data is loading independently.
         timetables=timetables
     )
     return subway_data
