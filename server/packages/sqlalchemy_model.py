@@ -82,7 +82,7 @@ class Timetables(Base):
     express_non_stop = Column(Boolean, nullable=False)
     
     __table_args__ = (
-        PrimaryKeyConstraint('line_id', 'train_id', 'station_public_code', 'day_code', "stop_no"),
+        PrimaryKeyConstraint('line_id', 'train_id', 'station_public_code', 'day_code', "stop_no", "updated_at"),
     )
     
 
