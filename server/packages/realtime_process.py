@@ -23,6 +23,9 @@ class RealtimeProcess:
         self.train_status = {
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
         
+        # Arrival line
+        self.arrival_line = [1032, 1077, 1094]
+        
         # Connect to socket pipe
         self.connect()
         
@@ -117,11 +120,12 @@ class RealtimeProcess:
         for row in data:
             # Filtering necessary data
             # Necessary Line data: 1032, 1077, 1094
-            if int(row["subwayId"]) not in [1032, 1077, 1094]: continue
+            if int(row["subwayId"]) not in self.arrival_line: continue
             
             station_id = int(row["statnId"])
             
             # Extract necessary attributes
+            train_status = self.train_status[int(row["arvlCd"])]
             information_message = row["arvlMsg2"]
             """
                 2 types of message 
@@ -131,8 +135,8 @@ class RealtimeProcess:
                     Spliting: ["당역", "도착"], ["전역", "출발"]
                 2. [n]OO OO (current_station_name)
                     The second type of message is composed to 3 words splited by space.
-                    예: [2]번째 도착 (양재시민의 숲)
-                    Spliting: ["[2]번쩨", "도착", "(양재시민의 숲)"]
+                    예: [2]번째 전역 (양재시민의 숲)
+                    Spliting: ["[2]번쩨", "전역", "(양재시민의 숲)"]
             """
             partial_message = information_message.split(maxsplit = 2)
             try:
@@ -141,9 +145,10 @@ class RealtimeProcess:
                         stop_order_diff = 0
                     else:
                         stop_order_diff = 1
+                    information_message = f"{stop_order_diff}전역 {partial_message[1]}"
                 else:
                     stop_order_diff = int(re.search(r'[0-9]+', partial_message[0]).group(0))
-                    information_message = f"{stop_order_diff}전역 {partial_message[1]}"
+                    information_message = f"{stop_order_diff}전역"
             except:
                 logger.error(traceback.format_exc())
                 stop_order_diff = None
@@ -155,7 +160,7 @@ class RealtimeProcess:
                 "cur_station_name": row["arvlMsg3"],
                 "received_at": row["recptnDt"],
                 "express": 1 if row["btrainSttus"] == "급행" else 0,
-                "train_status": self.train_status[int(row["arvlCd"])],
+                "train_status": train_status,
                 "up_down": 0 if row["updnLine"] == "상행" else 1,
                 "expected_left_time": int(row["barvlDt"]),
                 "stop_order_diff": stop_order_diff,
@@ -293,7 +298,7 @@ class RealtimeProcess:
             arrival_hashmap: dict[int, list] = self._process_arrival_all_data(arrival_data)
             # Add arrival data
             for d in arrival.to_dict(orient="records"):
-                if not d["line_id"] in [1032, 1077, 1094]:
+                if not d["line_id"] in self.arrival_line:
                     station_id = d["searched_station_id"]
                     d["train_status"] = self.train_status[d["train_status"]]
                     if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
