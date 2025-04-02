@@ -32,7 +32,7 @@ class MetroInfoManager():
                 )
             )
             columns = response.keys()
-            station_searchbar = [{c:StationSearchbarList(**row[i]) for i, c in enumerate(columns)} for row in response.fetchall()]
+            station_searchbar = [StationSearchbarList(**{c:row[i] for i, c in enumerate(columns)}) for row in response.fetchall()]
         return station_searchbar
     
     def get_station_info(self, station_public_code: str) -> dict:
