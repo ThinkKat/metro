@@ -24,7 +24,7 @@ class RealtimeProcess:
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
         
         # Arrival line
-        self.arrival_line = [1032, 1077, 1094]
+        self.arrival_line = [1077]
         
         # Connect to socket pipe
         self.connect()
