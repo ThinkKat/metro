@@ -98,7 +98,7 @@ class RealtimeProcess:
                     INNER JOIN stations s
                     ON tb.line_id = s.line_id
                     AND tb.station_public_code = s.station_public_code
-                    WHERE ((tb.updated_at <= :op_date AND tb.end_date > :op_date) OR (tb.end_date IS NULL))
+                    WHERE (tb.updated_at <= :op_date AND (tb.end_date > :op_date OR tb.end_date IS NULL))
                     AND tb.day_code = :day_code
                 """),
                 {"op_date": self.op_d_str, "day_code": self.day_code}

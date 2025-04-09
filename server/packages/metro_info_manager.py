@@ -157,7 +157,7 @@ class MetroInfoManager():
                     """
                     SELECT *
                     FROM timetables
-                    WHERE ((updated_at <= :op_date AND end_date > :op_date) OR (end_date IS NULL))
+                    WHERE (updated_at <= :op_date AND (end_date > :op_date OR end_date IS NULL))
                     AND station_public_code = :station_public_code
                     """
                 ),
