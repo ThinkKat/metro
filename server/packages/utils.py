@@ -15,5 +15,5 @@ def check_holiday(date_: date | str) -> bool:
 
 def is_next_date(time: str) -> bool:
     # time: HH:MM:SS
-    # 4시 50분 이전인 경우, next_date 정보
-    return (time[0:2] == "04" and time[4:6] < "50") or time[0:2] <= "03"
+    # 00시부터 4시 50분 사이인 경우, next_date 정보
+    return (time[0:2] == "04" and time[3:5] < "50") or time[0:2] <= "03"
