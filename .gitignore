@@ -12,3 +12,4 @@
 **/assets
 **/conf
 **/metro_information
+.env
