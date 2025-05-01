@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 class MetroRepository(ABC):
     
     @abstractmethod
-    def connect(self, db_url):
+    def create_engine(self, db_url: str):
         pass
     
     @abstractmethod
-    def close(self):
+    def dispose(self):
         pass
     
     @abstractmethod
@@ -20,7 +20,7 @@ class MetroRepository(ABC):
         pass
     
     @abstractmethod
-    def find_station_info(self, station_public_code: str) -> dict:
+    def find_total_station_info(self, station_public_code: str) -> dict:
         '''
             Return station information
                 1. station_name
@@ -33,10 +33,9 @@ class MetroRepository(ABC):
         '''
         pass
     
-    
-    
+
     @abstractmethod
-    def find_line_info(self, line_id: int) -> dict:
+    def find_line(self, line_id: int) -> dict:
         """Query line information
 
         Args:
@@ -47,10 +46,8 @@ class MetroRepository(ABC):
         """
         pass
     
-    
-    
     @abstractmethod
-    def find_station_info(self, station_public_code: str) -> dict:
+    def find_station(self, station_public_code: str) -> dict:
         """Query station information
 
         Args:

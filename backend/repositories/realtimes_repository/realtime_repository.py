@@ -3,16 +3,22 @@ from abc import ABC, abstractmethod
 class RealtimeRepository(ABC):
     
     @abstractmethod
-    def connect(self, db_url):
+    def create_engine(self, db_url):
         pass
     
     @abstractmethod
-    def close(self):
+    def dispose(self):
         pass
     
     @abstractmethod
-    def insert_realtimes(self, data: list[dict]):
+    def upsert_realtimes(self, data: list[dict]):
         """ Insert data to realtime data
+        """
+        pass
+    
+    @abstractmethod
+    def remove_realtimes(self):
+        """ Remove all data from realtime data
         """
         pass
     
