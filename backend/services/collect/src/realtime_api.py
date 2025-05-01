@@ -70,6 +70,7 @@ class RealtimeAPI:
             if status_code != 200:
                 # status code != 200 is error
                 # logger.error(f'The response status code is {status_code}')
+                print(f'The response status code is {status_code}')
                 
         except Exception as err:
             import traceback

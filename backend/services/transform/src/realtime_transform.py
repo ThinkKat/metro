@@ -3,32 +3,25 @@ import traceback
 import time
 import re
 from datetime import datetime, timedelta
-from multiprocessing.connection import Client
 
 import pandas as pd
-from sqlalchemy import create_engine, select, text # TODO: Substitue to repository modules
-from sqlalchemy.orm import Session
 
-from .utils import op_date, check_holiday, is_next_date
-# TODO: Remove data_model. Substitute to python object (dict)
-from .data_model import RealtimeRow, RealtimePositionRow, RealtimePosition, RealtimeStation 
-from .config import POSTGRESQL_METRO_DB_URL, UDS_ADDRESS 
+from repositories.timetable_repository.timetable_repository import TimetableRepository
+from model.pydantic_model import RealtimeArrivalRow, RealtimeArrival, RealtimePositionRow, RealtimePosition
+from utils.utils import op_date, check_holiday, is_next_date
 
 # logger = logging.getLogger("realtime-process")
 
 class RealtimeTransform:
-    def __init__(self, address = UDS_ADDRESS):
-        self.address = address # TODO: Change to Communication Handler
+    def __init__(self, timetable_repository: TimetableRepository):
+        self.timetable_repository = timetable_repository
         
         # To convert train status code 
         self.train_status = {
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
         
-        # Arrival line
+        # Arrival line - Environment variable
         self.arrival_line = [1077]
-        
-        # Connect to socket pipe
-        self.connect()
         
         # Set data, op_date, timetable data
         self.init()
@@ -42,29 +35,7 @@ class RealtimeTransform:
         # Load static data: timetable data
         self.set_timetable_data()
         
-        logger.info("Initialize realtime data, operational date, and timetable data")
-    
-    def connect(self):
-        """
-        TODO: Divide to communication handler
-        """
-        # Client
-        try:
-            self.client = Client(self.address)
-            logger.info("Connected to listener")
-        except ConnectionRefusedError:
-            # This excpetion is raised when the pipe isn't opening.
-            logger.error(traceback.format_exc())
-            time.sleep(5)
-            self.client = None
-        except FileNotFoundError:
-            # This exception is raised when the uds(AF_UNIX) files doesn't exists
-            logger.error(traceback.format_exc())
-            time.sleep(5)
-            self.client = None
-        except Exception:
-            logger.error(traceback.format_exc())
-            self.client = None
+        # logger.info("Initialize realtime data, operational date, and timetable data")
     
     def init_data(self):
         """
@@ -73,7 +44,7 @@ class RealtimeTransform:
         # Realtime Positon data
         self.realtime_position: dict[int, RealtimePosition] = {}
         # Realtime Arrival data
-        self.arrival_hashmap: dict[int, list[RealtimeRow]] = {}
+        self.arrival_hashmap: dict[int, list[RealtimeArrivalRow]] = {}
     
     def set_op_date(self):
         # Set operation date
@@ -84,38 +55,15 @@ class RealtimeTransform:
         self.op_d_str = self.op_d.strftime("%Y-%m-%d")
         self.next_d_str = self.next_d.strftime("%Y-%m-%d")
         self.day_code = 9 if check_holiday(self.op_d) else 8
-        logger.info(f"{self.op_d}: {"Weekday" if self.day_code == 8 else "Holiday"}")
+        # logger.info(f"{self.op_d}: {"Weekday" if self.day_code == 8 else "Holiday"}")
         
     def set_timetable_data(self):
         self.tb: pd.DataFrame = self._load_timetable_data() 
     
     def _load_timetable_data(self) -> pd.DataFrame:
-        """
-        TODO: Divide to Repository
-        """
         # load timetable data
-        # using self attributes
-        db_url = f"postgresql://{POSTGRESQL_METRO_DB_URL}"
-        engine = create_engine(db_url)
-        with Session(engine) as session:
-            # load timetable data
-            # using self attributes
-            data = session.execute(text("""
-                    SELECT 
-                        tb.*,
-                        s.station_id,
-                        s.station_name
-                    FROM timetables tb
-                    INNER JOIN stations s
-                    ON tb.line_id = s.line_id
-                    AND tb.station_public_code = s.station_public_code
-                    WHERE (tb.updated_at <= :op_date AND (tb.end_date > :op_date OR tb.end_date IS NULL))
-                    AND tb.day_code = :day_code
-                """),
-                {"op_date": self.op_d_str, "day_code": self.day_code}
-            )
-        tb = pd.DataFrame([r for r in data.fetchall()], columns = data.keys())
-        tb = tb.drop(columns = ["train_id"])
+        data = self.timetable_repository.find_timetable_for_calculation_delay(self.op_d_str, self.day_code)
+        tb = pd.DataFrame(data)
         
         # Convert time to datetime
         tb["arrival_datetime"] = tb["arrival_time"]
@@ -133,7 +81,7 @@ class RealtimeTransform:
         data_hashmap: dict[int, list] = {}
         for row in data:
             # Filtering necessary data
-            # Necessary Line data: 1032, 1077, 1094
+            # Necessary Line data: self.arrival_line
             if int(row["subwayId"]) not in self.arrival_line: continue
             
             station_id = int(row["statnId"])
@@ -164,7 +112,7 @@ class RealtimeTransform:
                     stop_order_diff = int(re.search(r'[0-9]+', partial_message[0]).group(0))
                     information_message = f"{stop_order_diff}전역"
             except:
-                logger.error(traceback.format_exc())
+                # logger.error(traceback.format_exc())
                 stop_order_diff = None
             
             new_row = {
@@ -300,12 +248,10 @@ class RealtimeTransform:
     def process_realtime_data(self, position_data: pd.DataFrame|None, arrival_data: list[dict]|None):
         """ Union arrival data and arrival/all data. 
 
-
         Args:
             position_data (pd.DataFrame | None): _description_
             arrival_data (list[dict] | None): _description_
         """
-        
         
         if position_data is not None:
             # Convert Type
@@ -342,10 +288,10 @@ class RealtimeTransform:
                         arrival_hashmap[station_id].append(d)
             
             self.arrival_hashmap = {
-                k:[RealtimeRow(**v) for v in values] for k, values in arrival_hashmap.items()
+                k:[RealtimeArrivalRow(**v) for v in values] for k, values in arrival_hashmap.items()
             }
         
-    def get_data_by_station_id(self, station_id: int, up: str, down: str) -> RealtimeStation:
+    def get_data_by_station_id(self, station_id: int, up: str, down: str) -> RealtimeArrival:
         """Get arrival data by station_id 
            TODO: Remove parameters up, down, only
 
@@ -355,7 +301,7 @@ class RealtimeTransform:
             down (str): _description_
 
         Returns:
-            RealtimeStation: _description_
+            RealtimeArrival: _description_
         """
         
         # Create arrival data
@@ -369,24 +315,5 @@ class RealtimeTransform:
                 data[up.split("_")[0]].append(row)
             else:
                 data[down.split("_")[0]].append(row)
-        return RealtimeStation(**data)
+        return RealtimeArrival(**data)
     
-if __name__ == "__main__":
-    logging.basicConfig(filename = "log/test.log",level = logging.INFO)
-    
-    rp = RealtimeProcess()
-    count = 0
-    while True:
-        rp.op_d = op_date(datetime_ = datetime.now() + timedelta(days=count))
-        rp.next_d = rp.op_d + timedelta(days=1)
-        rp.op_d_str = rp.op_d.strftime("%Y-%m-%d")
-        rp.next_d_str = rp.next_d.strftime("%Y-%m-%d")
-        rp.day_code = 9 if check_holiday(rp.op_d) else 8
-        logger.info(f"{rp.op_d}: {"Weekday" if rp.day_code == 8 else "Holiday"}")
-        
-        rp.set_timetable_data()
-        
-        logger.info(rp.tb["day_code"].unique())
-        
-        time.sleep(5)
-        count += 1

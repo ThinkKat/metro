@@ -162,7 +162,7 @@ class RealtimeCollect:
     
     def collect_realtime_data(self):
         """
-            realtime
+            realtime 
         """
         
         # logger.debug(f"Process realtime data {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")

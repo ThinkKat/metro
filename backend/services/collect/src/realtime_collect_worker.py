@@ -6,24 +6,20 @@ import os
 from datetime import datetime
 
 import pandas as pd
-from sqlalchemy import create_engine # TODO: Substitue to repository modules
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.sqlite import insert 
 
-from .ipc_listeners import IPCListner # TODO: Change to Communication Handler
+from communication.ipc_listener import IPCListner 
+from repositories.realtimes_repository.realtime_repository import RealtimeRepository
 
-from .config import SQLITE_REALTIME_DB_PATH, SQLITE_TEST_REALTIME_DB_PATH
-from .realtime_collect import RealtimeCollect
-from .sqlalchemy_model import Base, MockRealtime, Realtime
+from services.collect.src.realtime_collect import RealtimeCollect
+from model.sqlalchemy_model import Base, MockRealtime, Realtime
 
 class RealtimeCollectWorker:
-    def __init__(self, interval: int):
-        self.db_url = f"sqlite://{SQLITE_REALTIME_DB_PATH}"
-        self.engine = create_engine(self.db_url)
-
+    def __init__(self, address ,interval: int, realtime_repository: RealtimeRepository):
+        self.realtime_repository = realtime_repository
         self.interval = interval
         self.run_loop = self.check_time()
-        self.listener = IPCListner()
+        
+        self.listener = IPCListner(address)
         self.t = None # Set thread to an attribute.
     
     def check_thread_is_alive(self):
@@ -42,7 +38,7 @@ class RealtimeCollectWorker:
                 
         # Realtime Collect Module
         realtime_collect = RealtimeCollect()
-        Base.metadata.create_all(self.engine)
+        Base.metadata.create_all(self.realtime_repository.engine)
         
         while True:
             self.run_loop = self.check_time()
@@ -52,30 +48,31 @@ class RealtimeCollectWorker:
                     realtime_collect.collect_realtime_data()
                     
                     # Send data
-                    self.listener.set_data([realtime_collect.realtime_position, realtime_collect.realtime_arrival_all])
+                    self.listener.set_data(
+                        {
+                            "position": realtime_collect.realtime_position,
+                            "arrival_all": realtime_collect.realtime_arrival_all
+                        }
+                    )
                     
-                    # Save data 
-                    with Session(self.engine) as session:
-                        data = realtime_collect.realtime_position
-                        data["received_at"] = pd.to_datetime(data["received_at"], format="%Y-%m-%d %H:%M:%S")
-                        data["requested_at"] = pd.to_datetime(data["requested_at"], format="%Y-%m-%d %H:%M:%S")
-                        
-                        save_data = data[
-                            ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at"]    
-                        ].to_dict(orient="records")
-                        insert_stmt = insert(Realtime).values(save_data)
-                        upsert_stmt = insert_stmt.on_conflict_do_update(
-                            index_elements=['line_id', 'station_id', 'train_id', 'train_status'],
-                            set_={"received_at": insert_stmt.excluded.received_at, "requested_at": insert_stmt.excluded.requested_at}
-                        )
-                        session.execute(upsert_stmt)
-                        session.commit()
+                    data = realtime_collect.realtime_position
+                    data["received_at"] = pd.to_datetime(data["received_at"], format="%Y-%m-%d %H:%M:%S")
+                    data["requested_at"] = pd.to_datetime(data["requested_at"], format="%Y-%m-%d %H:%M:%S")
+                    
+                    save_data = data[
+                        ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at"]    
+                    ].to_dict(orient="records")
+                    
+                    self.realtime_repository.upsert_realtimes(save_data)
 
                     # logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     # logger.error(traceback.format_exc())
+                    print(traceback.format_exc())
+                
                 # TODO: After the listener is connected, interrupt time.sleep
                 time.sleep(self.interval)
+                
             else:
                 # Send the signal to notice that the loop is stalled
                 self.listener.set_data([0, 0])
@@ -101,14 +98,3 @@ class RealtimeCollectWorker:
         # logger.info(f"Start interval work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
         self.t.start()
         
-if __name__ == "__main__":
-    logging.basicConfig(
-        format = '{asctime}.{msecs:03.0f} {levelname:<8}:{name:<20}:{message}', 
-        style =  "{",
-        datefmt = "%Y-%m-%d %H:%M:%S",
-        level = logging.INFO
-    )
-
-    interval = 10
-    worker = RealtimeCollectWorker(interval = interval)
-    worker.start()
