@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..data_model.data_model import RealtimeData
+from model.pydantic_model import RealtimeData
 
 router = APIRouter()
 

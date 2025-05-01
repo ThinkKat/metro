@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+import uvicorn
 
-from .routers import metroinfo, realtimes
+from api.routers import metroinfo, realtimes
 
 app = FastAPI()
 
@@ -12,3 +13,6 @@ app.include_router(realtimes.router, prefix = prefix)
 @app.get("/api/metro")
 async def metro():
     return {"description": "This is the API for metro data"}
+
+if __name__ == "__main__":
+    pass
