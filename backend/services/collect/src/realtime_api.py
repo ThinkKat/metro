@@ -2,7 +2,7 @@ import sqlite3
 
 import requests
 
-from .config import API_KEY_DB_PATH
+from .config import API_KEY_DB_PATH, BASE_URL, REALTIME_POSITION, REALTIME_STATIONS_ARRIVAL, REALTIME_STATIONS_ARRIVAL_ALL
 
 """ 
     RealtimeAPI Class
@@ -24,7 +24,7 @@ from .config import API_KEY_DB_PATH
 class RealtimeAPI:
     def __init__(self):
         self.api_key = self.get_key()
-        self.base_url = 'http://swopenapi.seoul.go.kr/api/subway'
+        self.base_url = BASE_URL
 
     def get_key(self) -> str:
         conn = sqlite3.connect(API_KEY_DB_PATH)
@@ -49,9 +49,9 @@ class RealtimeAPI:
         Returns:
             str: endpoint
         """
-        if api_name == "realtimePosition": return f"{self.base_url}/{self.api_key}/json/realtimePosition/0/1000/{name}"
-        elif api_name == "realtimeStationArrival": return f"{self.base_url}/{self.api_key}/json/realtimeStationArrival/0/1000/{name}"
-        elif api_name == "realtimeStationArrival/ALL": return f"{self.base_url}/{self.api_key}/json/realtimeStationArrival/ALL"
+        if api_name == REALTIME_POSITION: return f"{self.base_url}/{self.api_key}/json/{REALTIME_POSITION}/0/1000/{name}"
+        elif api_name == REALTIME_STATIONS_ARRIVAL: return f"{self.base_url}/{self.api_key}/json/{REALTIME_STATIONS_ARRIVAL}/0/1000/{name}"
+        elif api_name == REALTIME_STATIONS_ARRIVAL_ALL: return f"{self.base_url}/{self.api_key}/json/{REALTIME_STATIONS_ARRIVAL_ALL}"
         else: raise Exception(f"There isn't no api named {api_name}")
     
     def parse_response(self, response: requests.models.Response|None) -> list[dict]|None:

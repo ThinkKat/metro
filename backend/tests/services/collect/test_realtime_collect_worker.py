@@ -19,5 +19,11 @@ if __name__ == "__main__":
     sqlite_realtime_repository = SqliteRealtimeRepository()
     sqlite_realtime_repository.create_engine(db_url)
     
-    realtime_collect_worker = RealtimeCollectWorker(interval, ipc_listener, sqlite_realtime_repository)
+    realtime_collect_worker = RealtimeCollectWorker(
+        interval, 
+        ipc_listener, 
+        sqlite_realtime_repository,
+        os.getenv("START_TIME"),
+        os.getenv("END_TIME")
+    )
     realtime_collect_worker.start()

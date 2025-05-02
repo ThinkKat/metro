@@ -13,9 +13,18 @@ from services.collect.src.realtime_collect import RealtimeCollect
 from model.sqlalchemy_model import Base, MockRealtime, Realtime
 
 class RealtimeCollectWorker:
-    def __init__(self, interval: int, listener, realtime_repository: RealtimeRepository):
+    def __init__(self, 
+                 interval: int, 
+                 listener, 
+                 realtime_repository: RealtimeRepository,
+                 start_time,
+                 end_time
+                 ):
         self.realtime_repository = realtime_repository
         self.interval = interval
+        self.start_time = start_time
+        self.end_time = end_time
+        
         self.run_loop = self.check_time()
         
         self.listener = listener
@@ -28,7 +37,7 @@ class RealtimeCollectWorker:
         # Maintaining time: 04:50 - 01:30 (tomorrow)
         # TODO : Create Collect time to environment variable ("04:50:00" - "01:30:00")
         dt_str_now = datetime.now().strftime("%H:%M:%S")
-        return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
+        return dt_str_now >= self.start_time or dt_str_now <= self.end_time
     
     def interval_work(self):    
         # Realtime Collect Module
