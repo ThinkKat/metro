@@ -1,7 +1,0 @@
-fastapi==0.115.8
-PyYAML==6.0.2
-uvicorn==0.34.0
-holidays==0.66
-pandas==2.2.3
-SQLAlchemy==2.0.40
-psycopg2-binary==2.9.10
