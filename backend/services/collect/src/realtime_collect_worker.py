@@ -7,19 +7,18 @@ from datetime import datetime
 
 import pandas as pd
 
-from communication.ipc_listener import IPCListner 
 from repositories.realtimes_repository.realtime_repository import RealtimeRepository
 
 from services.collect.src.realtime_collect import RealtimeCollect
 from model.sqlalchemy_model import Base, MockRealtime, Realtime
 
 class RealtimeCollectWorker:
-    def __init__(self, address ,interval: int, realtime_repository: RealtimeRepository):
+    def __init__(self, interval: int, listener, realtime_repository: RealtimeRepository):
         self.realtime_repository = realtime_repository
         self.interval = interval
         self.run_loop = self.check_time()
         
-        self.listener = IPCListner(address)
+        self.listener = listener
         self.t = None # Set thread to an attribute.
     
     def check_thread_is_alive(self):
@@ -31,11 +30,7 @@ class RealtimeCollectWorker:
         dt_str_now = datetime.now().strftime("%H:%M:%S")
         return dt_str_now >= "04:50:00" or dt_str_now <= "01:30:00"
     
-    def interval_work(self):
-        # Open ipc listener
-        t = threading.Thread(target = self.listener.start)
-        t.start()
-                
+    def interval_work(self):    
         # Realtime Collect Module
         realtime_collect = RealtimeCollect()
         Base.metadata.create_all(self.realtime_repository.engine)

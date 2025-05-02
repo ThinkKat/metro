@@ -6,7 +6,6 @@ from datetime import datetime
 
 import pandas as pd
 
-from communication.ipc_client import IPCClient
 # Repositories
 from repositories.timetable_repository.timetable_repository import TimetableRepository
 from repositories.delay_repository.delay_repository import DelayRepository
@@ -18,7 +17,8 @@ from services.transform.src.realtime_transform import RealtimeTransform
 
 class RealtimeTransformWorker:
     def __init__(self,
-                 address, 
+                 listener,
+                 client, 
                  timetable_repoitory: TimetableRepository,
                  delay_repository: DelayRepository, 
                  realtime_repository: RealtimeRepository):
@@ -26,21 +26,20 @@ class RealtimeTransformWorker:
         self.delay_repository = delay_repository
         self.realtime_repository = realtime_repository
         
-        self.client = IPCClient(address)
+        self.listener = listener
+        self.client = client
         self.realtime_transform = RealtimeTransform(timetable_repoitory)
         self.t = None
         
     def interval_work(self):
+        # Connect to listener
         self.client.connect()
-        
         while True:
-            try:            
-                # When the client is connected to listeners
+            try:                            
                 try:
                     data = self.client.recv()
                     position_data = data["position"]
                     realtime_arrival_all = data["arrival_all"]
-                    print(datetime.now())
                     
                     # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
@@ -77,6 +76,12 @@ class RealtimeTransformWorker:
                     else:
                         # Process data
                         self.realtime_transform.process_realtime_data(position_data, realtime_arrival_all)
+                        self.listener.set_data(
+                            {
+                                "position": self.realtime_transform.realtime_position,
+                                "arrival": self.realtime_transform.arrival_hashmap
+                            }
+                        )
                 except Exception:
                     # logger.info("Client is not connected. Try to connect to listener...")
                     # logger.error(traceback.format_exc())
