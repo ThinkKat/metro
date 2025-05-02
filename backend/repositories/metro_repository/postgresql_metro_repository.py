@@ -59,7 +59,8 @@ class PostgresqlMetroRepository(MetroRepository):
             "station": Station(**station),
             "line": Line(**line),
             "transfer_lines": [TransferLine(**t) for t in transfer_lines],
-            "adjacent_stations": adjacent_stations
+            "adjacent_stations": adjacent_stations,
+            "has_realtimes": station["station_id"] > 0
         }
         return StationInfo(**data)
     
@@ -212,6 +213,7 @@ class PostgresqlMetroRepository(MetroRepository):
             data = [{c:row[i] for i, c in enumerate(columns)} for row in rows]
         
         return data
+    
     
     
 if __name__ == "__main__":

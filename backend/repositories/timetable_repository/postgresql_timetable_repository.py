@@ -49,17 +49,21 @@ class PostgresqlTimetableRepository(TimetableRepository):
             ]
         return data
         
-    def find_timetable_by_station_public_code(self, op_date: str, station_public_code: str) -> list:
+    def find_timetable_by_station_public_code(self, op_date: str, station_public_code: str) -> dict[str, Timetable]:
         with Session(self.engine) as session:
             response = session.execute(text(
                     """
                     SELECT 
                         *,
                         CASE
+                            WHEN hour IS NULL THEN 99
                             WHEN hour < 5 THEN hour + 24
                             ELSE hour
                         END AS sort_hour_key,
-                        minute AS sort_minute_key,
+                        CASE
+                            WHEN minute IS NULL THEN 99
+                            ELSE minute
+                        END AS sort_minute_key,
                         CASE
                             WHEN CAST(stb.up_down AS INT) = s.left_direction THEN 'left'
                             ELSE 'right'
@@ -84,10 +88,18 @@ class PostgresqlTimetableRepository(TimetableRepository):
                 {c:row[i] for i, c in enumerate(columns)} 
                 for row in response.fetchall()
             ]
-            timetable = {"left": [], "right": []}
+            weekday = {"left": [], "right":[]}
+            holiday = {"left": [], "right":[]}
             for row in data:
-                timetable[row["direction"]].append(TimetableRow(**row))
-        return Timetable(**timetable)
+                if row["day_code"] == 8:
+                    weekday[row["direction"]].append(TimetableRow(**row))
+                else:
+                    holiday[row["direction"]].append(TimetableRow(**row))
+                    
+        return {
+            "weekday": Timetable(**weekday),
+            "holiday": Timetable(**holiday)
+        }
 
 if __name__ == "__main__":
     # Example usage
