@@ -27,19 +27,14 @@ if __name__ == "__main__":
             "file": {
                 "formatter": "default",
                 "class": logging.FileHandler,
-                "filename": 'logs/interval-collect-data.log',
+                "filename": 'logs/realtime-collect-process.log',
             }
         },
-        "loggers": {
-            "realtime-collect": {
-                "level": "INFO",
-                "handlers": ["file"],
-                "propagate": False
-            }
-        },
+        
         "root": {
             "level": "INFO",
-            "handlers": ["file"]
+            "handlers": ["file"],
+            "propagate": False
         }
         
     }
@@ -67,7 +62,7 @@ if __name__ == "__main__":
     # Start process
     logging.info(
         f"""
-        Start interval collect work... PID: {os.getpid()}
+        Start realtime collect worker... PID: {os.getpid()}
         Version: {f"{version}"}
         Commit date: {commit_date}
         """)
