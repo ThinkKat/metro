@@ -40,6 +40,11 @@ if __name__ == "__main__":
                 "level": "INFO",
                 "handlers": ["file"],
                 "propagate": False
+            },
+            "ipc_listener": {
+                "level": "INFO",
+                "handlers": ["file"],
+                "propagate": False
             }
         },
         "root": {
