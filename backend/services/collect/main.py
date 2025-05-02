@@ -30,7 +30,18 @@ if __name__ == "__main__":
                 "filename": 'logs/realtime-collect-process.log',
             }
         },
-        
+        "loggers": {
+            "realtime_collect_worker": {
+                "level": "INFO",
+                "handlers": ["file"],
+                "propagate": False
+            },
+            "realtime_collect": {
+                "level": "INFO",
+                "handlers": ["file"],
+                "propagate": False
+            }
+        },
         "root": {
             "level": "INFO",
             "handlers": ["file"],
