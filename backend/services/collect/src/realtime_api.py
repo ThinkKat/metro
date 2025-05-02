@@ -1,4 +1,5 @@
 import sqlite3
+import logging
 
 import requests
 
@@ -20,6 +21,8 @@ from .config import API_KEY_DB_PATH, BASE_URL, REALTIME_POSITION, REALTIME_STATI
         3. realtimeStationArrival/ALL
     3. API_KEY
 """
+
+logger = logging.getLogger("realtime_api")
 
 class RealtimeAPI:
     def __init__(self):
@@ -69,13 +72,12 @@ class RealtimeAPI:
             # check the status code
             if status_code != 200:
                 # status code != 200 is error
-                # logger.error(f'The response status code is {status_code}')
-                print(f'The response status code is {status_code}')
+                logger.error(f'The response status code is {status_code}')
                 
         except Exception as err:
             import traceback
             tb = traceback.format_exc()
-            # logger.error(tb)
+            logger.error(tb)
             return None
         
         # Check errorMessage
@@ -83,7 +85,7 @@ class RealtimeAPI:
         keys = list(json.keys())
 
         if 'code' in keys:
-            # logger.error(f"There is some error. Error code is {json['code']}. {json['message']}")
+            logger.error(f"There is some error. Error code is {json['code']}. {json['message']}")
             data = None
         else:
             error = json[keys[0]]
@@ -91,7 +93,7 @@ class RealtimeAPI:
                 # If code is 'INFO-000', there is no issue.
                 data = json[keys[1]]
             else:
-                # logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
+                logger.error(f"There is some error. Error code is {error['code']}. {error['message']}")
                 data = None
 
         return data

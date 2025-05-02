@@ -2,10 +2,11 @@ import os
 import time
 import threading
 import traceback
+import logging
 
 from multiprocessing.connection import Listener
 
-# logger = logging.getLogger("realtime-collect")
+logger = logging.getLogger("ipc_listener")
 
 class IPCListener:
     def __init__(self, address):
@@ -19,21 +20,18 @@ class IPCListener:
         self.conn = None
     
     def open_pipe(self):
-        # logger.info("Open listener...")
-        print("Open listener...")
+        logger.info("Open listener...")
         self.conn = None
         try:
             self.conn = self.listener.accept() # Wait till connecting to client  
-            # logger.info("Connected to client")
-            print("Connected to client")
+            logger.info("Connected to client")
         except Exception:
-            # logger.error(traceback.format_exc())
-            print(traceback.format_exc())
+            logger.error(traceback.format_exc())
     
     def set_data(self, data: list):
         self.data = data
         self.update = True
-        # if self.conn is None: logger.debug("Not yet connected...")
+        if self.conn is None: logger.debug("Not yet connected...")
     
     def listen(self):
         """
@@ -55,8 +53,7 @@ class IPCListener:
         while True:
             try:
                 if self.update:
-                    # logger.debug("Send data...")
-                    print("Send data...")
+                    logger.debug("Send data...")
                     self.conn.send(self.data)
                     self.update = False
                 
@@ -64,8 +61,7 @@ class IPCListener:
                 if self.conn.poll():
                     self.conn.recv()
             except Exception:
-                # logger.error(traceback.format_exc())
-                print(traceback.format_exc())
+                logger.error(traceback.format_exc())
                 self.open_pipe()
             time.sleep(0.5)
             

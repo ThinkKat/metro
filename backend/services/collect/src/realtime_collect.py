@@ -1,10 +1,13 @@
 import time
 from datetime import datetime
+import logging
 
 import requests
 import pandas as pd
 
 from .realtime_api import RealtimeAPI
+
+logger = logging.getLogger("realtime_collect")
 
 class RealtimeCollect:
     def __init__(self):
@@ -137,9 +140,9 @@ class RealtimeCollect:
             error_data = rt[rt["statnId"].isna() | rt["statnTid"].isna()]
             if len(error_data) >= 1:
                 error = traceback.format_exc()
-                # logger.error(error)
-                # logger.warning("There are some error data.")
-                # logger.warning(error_data.to_dict(orient="records"))
+                logger.error(error)
+                logger.warning("There are some error data.")
+                logger.warning(error_data.to_dict(orient="records"))
                 rt = rt.drop(index = error_data.index)
             
             rt = rt.rename(columns=change_cols).astype({"line_id": "int", "train_id": "string", "station_id": "int", "train_status": "int"})
@@ -165,22 +168,22 @@ class RealtimeCollect:
             realtime 
         """
         
-        # logger.debug(f"Process realtime data {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+        logger.debug(f"Process realtime data {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
         start = time.time()
         
         # Get realtimeArrival/ALL data
         requested_at_arrival_all = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # logger.debug(f"realtimeArrival/ALL Requested_at: {requested_at_arrival_all}")
+        logger.debug(f"realtimeArrival/ALL Requested_at: {requested_at_arrival_all}")
         self.realtime_arrival_all = self._get_realatime_arrival_all_data()
         
         # Get realtimeArrival
         requested_at_position= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # logger.debug(f"realtimePosition Requested_at: {requested_at_position}")
+        logger.debug(f"realtimePosition Requested_at: {requested_at_position}")
         data = self._get_realtime_position_data()
         if data is not None:
             self.realtime_position = self._preprocess_realtime_position(data)
             self.realtime_position["requested_at"] = requested_at_position
         
-        # logger.debug(f"Process data {time.time()-start:05f}s...")
+        logger.debug(f"Process data {time.time()-start:05f}s...")
         # Close session
         self.session.close()

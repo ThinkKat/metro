@@ -10,7 +10,7 @@ from repositories.timetable_repository.timetable_repository import TimetableRepo
 from model.pydantic_model import RealtimeArrivalRow, RealtimeArrival, RealtimePositionRow, RealtimePosition
 from utils.utils import op_date, check_holiday, is_next_date
 
-# logger = logging.getLogger("realtime-process")
+logger = logging.getLogger("realtime_transform")
 
 class RealtimeTransform:
     def __init__(self, timetable_repository: TimetableRepository):
@@ -35,7 +35,7 @@ class RealtimeTransform:
         # Load static data: timetable data
         self.set_timetable_data()
         
-        # logger.info("Initialize realtime data, operational date, and timetable data")
+        logger.info("Initialize realtime data, operational date, and timetable data")
     
     def init_data(self):
         """
@@ -55,7 +55,7 @@ class RealtimeTransform:
         self.op_d_str = self.op_d.strftime("%Y-%m-%d")
         self.next_d_str = self.next_d.strftime("%Y-%m-%d")
         self.day_code = 9 if check_holiday(self.op_d) else 8
-        # logger.info(f"{self.op_d}: {"Weekday" if self.day_code == 8 else "Holiday"}")
+        logger.info(f"{self.op_d}: {"Weekday" if self.day_code == 8 else "Holiday"}")
         
     def set_timetable_data(self):
         self.tb: pd.DataFrame = self._load_timetable_data() 
@@ -112,7 +112,7 @@ class RealtimeTransform:
                     stop_order_diff = int(re.search(r'[0-9]+', partial_message[0]).group(0))
                     information_message = f"{stop_order_diff}전역"
             except:
-                # logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc())
                 stop_order_diff = None
             
             new_row = {
@@ -293,7 +293,6 @@ class RealtimeTransform:
         
     def get_data_by_station_id(self, station_id: int, up: str, down: str) -> RealtimeArrival:
         """Get arrival data by station_id 
-           TODO: Remove parameters up, down, only
 
         Args:
             station_id (int): _description_

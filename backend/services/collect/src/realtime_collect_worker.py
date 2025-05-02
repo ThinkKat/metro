@@ -12,6 +12,8 @@ from repositories.realtimes_repository.realtime_repository import RealtimeReposi
 from services.collect.src.realtime_collect import RealtimeCollect
 from model.sqlalchemy_model import Base, MockRealtime, Realtime
 
+logger = logging.getLogger("realtime_collect_worker")
+
 class RealtimeCollectWorker:
     def __init__(self, 
                  interval: int, 
@@ -35,7 +37,6 @@ class RealtimeCollectWorker:
     
     def check_time(self):
         # Maintaining time: 04:50 - 01:30 (tomorrow)
-        # TODO : Create Collect time to environment variable ("04:50:00" - "01:30:00")
         dt_str_now = datetime.now().strftime("%H:%M:%S")
         return dt_str_now >= self.start_time or dt_str_now <= self.end_time
     
@@ -69,9 +70,9 @@ class RealtimeCollectWorker:
                     
                     self.realtime_repository.upsert_realtimes(save_data)
 
-                    # logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
+                    logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
-                    # logger.error(traceback.format_exc())
+                    logger.error(traceback.format_exc())
                     print(traceback.format_exc())
                 
                 # TODO: After the listener is connected, interrupt time.sleep
@@ -86,11 +87,11 @@ class RealtimeCollectWorker:
                 next_start_datetime_str = cur_datetime.date().strftime("%Y-%m-%d") + " 04:50:00" 
                 next_start_datetime = datetime.strptime(next_start_datetime_str, "%Y-%m-%d %H:%M:%S")
                 next_start_interval = (next_start_datetime - cur_datetime).seconds + 1 # Adding 1 seconds to adjust interval time.
-                # logger.info(f"Current time: {cur_datetime.strftime("%Y-%m-%d %H:%M:%S")} Loop is terminated. After {next_start_interval//3600}h {next_start_interval%3600//60}m {next_start_interval%3600%60}s, loop will be restarted.")
+                logger.info(f"Current time: {cur_datetime.strftime("%Y-%m-%d %H:%M:%S")} Loop is terminated. After {next_start_interval//3600}h {next_start_interval%3600//60}m {next_start_interval%3600%60}s, loop will be restarted.")
                 
                 # Time Sleep
                 time.sleep(next_start_interval)
-                # logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
+                logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
                 
                 # Send the signal to notice that the loop is started
                 self.listener.set_data([1, 1])
@@ -99,6 +100,6 @@ class RealtimeCollectWorker:
         """ Running on a new thread
         """
         self.t = threading.Thread(target = self.interval_work)
-        # logger.info(f"Start interval work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+        logger.info(f"Start interval work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
         self.t.start()
         

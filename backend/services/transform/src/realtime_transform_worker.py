@@ -14,6 +14,7 @@ from repositories.realtimes_repository.realtime_repository import RealtimeReposi
 # Transform Module
 from services.transform.src.realtime_transform import RealtimeTransform
 
+logger = logging.getLogger('realtime_transform_worker')
 
 class RealtimeTransformWorker:
     def __init__(self,
@@ -43,7 +44,7 @@ class RealtimeTransformWorker:
                     
                     # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
-                        # logger.info("Loop is terminated")
+                        logger.info("Loop is terminated")
                         print("Loop is terminated")
                         # Get all realtime data
                         response = self.realtime_repository.find_realtimes(self.realtime_transform.op_d_str)
@@ -68,7 +69,7 @@ class RealtimeTransformWorker:
                     
                     # position_data == 1 means that the collect loop is started. 
                     elif isinstance(position_data, int) and position_data == 1:
-                        # logger.info("Loop is started")
+                        logger.info("Loop is started")
                         print("Loop is started")
                         self.realtime_transform.init()
                         continue
@@ -83,21 +84,21 @@ class RealtimeTransformWorker:
                             }
                         )
                 except Exception:
-                    # logger.info("Client is not connected. Try to connect to listener...")
-                    # logger.error(traceback.format_exc())
+                    logger.info("Client is not connected. Try to connect to listener...")
+                    logger.error(traceback.format_exc())
                     print("Client is not connected. Try to connect to listener...")
                     print(traceback.format_exc())
                     self.client.connect()
                     
                     # IF client isn't connected, initialize data
                     if self.client is None:
-                        # logger.info("Failed to connect. Reset data.")
+                        logger.info("Failed to connect. Reset data.")
                         print("Failed to connect. Reset data.")
                         # Reset data
                         self.realtime_transform.init_data()
                     
             except Exception:
-                # logger.error(traceback.format_exc())
+                logger.error(traceback.format_exc())
                 print(traceback.format_exc())
     
     def check_is_alive(self):
@@ -107,7 +108,7 @@ class RealtimeTransformWorker:
         """ Running on a new thread
         """
         self.t = threading.Thread(target = self.interval_work)
-        # logger.info(f"Start process work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
+        logger.info(f"Start process work {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
         self.t.start()
 
 
