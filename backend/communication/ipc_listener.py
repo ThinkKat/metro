@@ -1,12 +1,13 @@
 import os
 import time
+import threading
 import traceback
 
 from multiprocessing.connection import Listener
 
 # logger = logging.getLogger("realtime-collect")
 
-class IPCListner:
+class IPCListener:
     def __init__(self, address):
         # Check whether path exists
         if os.path.exists(address):
@@ -34,7 +35,7 @@ class IPCListner:
         self.update = True
         # if self.conn is None: logger.debug("Not yet connected...")
     
-    def start(self):
+    def listen(self):
         """
             Listener Connection for IPC.
             Check the pipe connection continuously every second.
@@ -93,6 +94,10 @@ class IPCListner:
             except:
                 pass
             
+    def start(self):
+        t = threading.Thread(target = self.listen)
+        t.start()
+            
 if __name__ == "__main__":
     ipc_listener = IPCListner('/tmp/uds.sock')
-    ipc_listener.start()
+    ipc_listener.listen()
