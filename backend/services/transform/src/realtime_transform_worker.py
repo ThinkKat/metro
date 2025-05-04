@@ -57,10 +57,12 @@ class RealtimeTransformWorker:
                         delay_data["stop_no"] = delay_data["stop_no"].fillna(-1)
                         delay_data["delayed_time"] = delay_data["delayed_time"].dt.total_seconds()
                         
+                        logger.info("Start to insert delay data")
                         # Insert delay data
                         usecols = ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at", "day_code", "first_last", "stop_no", "delayed_time", "op_date"]
                         delay_data = delay_data[usecols].to_dict(orient="records")
                         self.delay_repository.insert_delay_many(delay_data, 10000)
+                        logger.info("Success to insert delay data")
                         
                         # Delete realtimes
                         self.realtime_repository.remove_realtimes()
