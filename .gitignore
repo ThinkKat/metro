@@ -6,7 +6,7 @@
 **/static
 **/node_modules
 **/dist
-**/log
+**/logs
 **/*.log
 **/*.csv
 **/assets
