@@ -1,5 +1,7 @@
-from sqlalchemy import create_engine, insert, Delay
+from sqlalchemy import create_engine, insert
 from sqlalchemy.orm import Session
+
+from model.sqlalchemy_model import Delay
 
 from repositories.delay_repository.delay_repository import DelayRepository
 

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select, text, insert, delete
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from repositories.timetable_repository.timetable_repository import TimetableRepository
