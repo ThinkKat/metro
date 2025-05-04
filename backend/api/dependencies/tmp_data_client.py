@@ -45,7 +45,7 @@ def get_position_by_line_id(line_id: int) -> RealtimePosition:
     if line_id in position:
         return position[line_id]
     else:
-        return RealtimePosition([])
+        return RealtimePosition(**{"place": []})
     
 
 def get_arrival_by_station_id(station_id: int, up: str, down: str) -> RealtimeArrival:
