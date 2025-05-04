@@ -46,8 +46,8 @@ class RealtimeTransformWorker:
                     if isinstance(position_data, int) and position_data == 0:
                         logger.info("Loop is terminated")
                         # Get all realtime data
-                        response = self.realtime_repository.find_realtimes(self.realtime_transform.op_d_str)
-                        df = pd.DataFrame(response.fetchall(), columns = response.keys())
+                        data = self.realtime_repository.find_realtimes(self.realtime_transform.op_d_str)
+                        df = pd.DataFrame(data)
 
                         # Caculate delay time
                         delay_data = self.realtime_transform.get_delay_data(df)
