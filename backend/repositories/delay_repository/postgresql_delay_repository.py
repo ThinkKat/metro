@@ -26,6 +26,6 @@ class PostgresqlDelayRepository(DelayRepository):
                 batch = data[i:i + data_size]
                 insert_stmt = insert(Delay).values(batch)
                 session.execute(insert_stmt)
-                session.commit()
+            session.commit()
             
             
