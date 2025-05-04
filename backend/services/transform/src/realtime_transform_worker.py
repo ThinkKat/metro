@@ -60,7 +60,7 @@ class RealtimeTransformWorker:
                         # Insert delay data
                         usecols = ["line_id", "station_id", "train_id", "received_at", "train_status", "requested_at", "day_code", "first_last", "stop_no", "delayed_time", "op_date"]
                         delay_data = delay_data[usecols].to_dict(orient="records")
-                        self.delay_repository.insert_delay(delay_data)
+                        self.delay_repository.insert_delay_many(delay_data, 10000)
                         
                         # Delete realtimes
                         self.realtime_repository.remove_realtimes()
