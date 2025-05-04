@@ -73,14 +73,13 @@ class RealtimeCollectWorker:
                     logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     logger.error(traceback.format_exc())
-                    print(traceback.format_exc())
                 
                 # TODO: After the listener is connected, interrupt time.sleep
                 time.sleep(self.interval)
                 
             else:
                 # Send the signal to notice that the loop is stalled
-                self.listener.set_data([0, 0])
+                self.listener.set_data({"position": 0, "arrival_all": 0})
                 
                 # Terminate loop.
                 cur_datetime = datetime.now()
@@ -94,7 +93,7 @@ class RealtimeCollectWorker:
                 logger.info(f"Current time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Loop is to be started.")
                 
                 # Send the signal to notice that the loop is started
-                self.listener.set_data([1, 1])
+                self.listener.set_data({"position": 1, "arrival_all": 1})
         
     def start(self):
         """ Running on a new thread

@@ -45,7 +45,6 @@ class RealtimeTransformWorker:
                     # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
                         logger.info("Loop is terminated")
-                        print("Loop is terminated")
                         # Get all realtime data
                         response = self.realtime_repository.find_realtimes(self.realtime_transform.op_d_str)
                         df = pd.DataFrame(response.fetchall(), columns = response.keys())
@@ -70,7 +69,6 @@ class RealtimeTransformWorker:
                     # position_data == 1 means that the collect loop is started. 
                     elif isinstance(position_data, int) and position_data == 1:
                         logger.info("Loop is started")
-                        print("Loop is started")
                         self.realtime_transform.init()
                         continue
                     
@@ -86,20 +84,16 @@ class RealtimeTransformWorker:
                 except Exception:
                     logger.info("Client is not connected. Try to connect to listener...")
                     logger.error(traceback.format_exc())
-                    print("Client is not connected. Try to connect to listener...")
-                    print(traceback.format_exc())
                     self.client.connect()
                     
                     # IF client isn't connected, initialize data
                     if self.client is None:
                         logger.info("Failed to connect. Reset data.")
-                        print("Failed to connect. Reset data.")
                         # Reset data
                         self.realtime_transform.init_data()
                     
             except Exception:
                 logger.error(traceback.format_exc())
-                print(traceback.format_exc())
     
     def check_is_alive(self):
         return self.t is not None and self.t.is_alive()
