@@ -9,7 +9,7 @@ from repositories.timetable_repository.postgresql_timetable_repository import Po
 from repositories.delay_repository.postgresql_delay_repository import PostgresqlDelayRepository
 from repositories.realtimes_repository.sqlite_realtime_repository import SqliteRealtimeRepository
 
-from model.pydantic_model import RealtimeArrival
+from model.pydantic_model import RealtimePosition, RealtimeArrival
 
 load_dotenv()
 tc_address = os.getenv("TRANSFORM_CONTROLLER_ADDRESS")
@@ -40,8 +40,13 @@ realtime_transform_worker = RealtimeTransformWorker(
 )
 realtime_transform_worker.start()
 
-def get_position_by_line_id(line_id: int) -> dict:
-    return realtime_transform_worker.realtime_transform.realtime_position[line_id]
+def get_position_by_line_id(line_id: int) -> RealtimePosition:
+    position = realtime_transform_worker.realtime_transform.realtime_position
+    if line_id in position:
+        return position[line_id]
+    else:
+        return RealtimePosition([])
+    
 
 def get_arrival_by_station_id(station_id: int, up: str, down: str) -> RealtimeArrival:
         """Get arrival data by station_id 
@@ -57,8 +62,13 @@ def get_arrival_by_station_id(station_id: int, up: str, down: str) -> RealtimeAr
         
         # Create arrival data
         data = {"left": [], "right": []}
+        
+        arrival = realtime_transform_worker.realtime_transform.arrival_hashmap
         # Get data by id
-        realtime_arrival = realtime_transform_worker.realtime_transform.arrival_hashmap[station_id]
+        if station_id in arrival:
+            realtime_arrival = arrival[station_id]
+        else:
+            realtime_arrival = []
         
         # up: "left_direction", down: "right_direction"
         for row in realtime_arrival:
