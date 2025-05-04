@@ -6,4 +6,4 @@
 import subprocess
 
 subprocess.Popen([".venv/bin/python", "-m", "services.collect.main"])
-subprocess.Popen(["uvicorn", "api.main:app", "--port", "8001", "--log-config", "api/log_conf.yaml"])
+subprocess.Popen(["uvicorn", "api.main:app", "--port", "8000", "--log-config", "api/log_conf.yaml"])
