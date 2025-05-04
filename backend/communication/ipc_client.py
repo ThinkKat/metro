@@ -17,7 +17,6 @@ class IPCClient:
         try:
             self.client = Client(self.address)
             logger.info("Connected to listener")
-            print("Connected to listener")
         except ConnectionRefusedError:
             # This excpetion is raised when the pipe isn't opening.
             logger.error(traceback.format_exc())
