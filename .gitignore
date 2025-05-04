@@ -13,3 +13,4 @@
 **/conf
 **/metro_information
 .env
+web_server/
