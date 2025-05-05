@@ -21,3 +21,9 @@ class DelayRepository(ABC):
         """ Insert delay data with data_size
         """
         pass
+    
+    @abstractmethod
+    def find_delay_many_by_op_date(self, op_date: str, size: int = 1000) -> dict:
+        """ Select delay data by op date
+        """
+        pass
