@@ -11,6 +11,9 @@
 **/*.csv
 **/assets
 **/conf
+**/tmp
 **/metro_information
 .env
 web_server/
+**/mount/
+compose.yaml
