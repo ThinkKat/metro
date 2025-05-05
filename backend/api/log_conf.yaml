@@ -19,7 +19,7 @@ handlers:
   access:
     formatter: access
     class: logging.FileHandler
-    filename: 'logs/fastapi.log'
+    filename: assets/logs/fastapi.log
 loggers:
   uvicorn.error:
     level: INFO

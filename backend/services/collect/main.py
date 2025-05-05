@@ -12,6 +12,8 @@ from services.collect.src.realtime_collect_worker import RealtimeCollectWorker
 from repositories.realtimes_repository.sqlite_realtime_repository import SqliteRealtimeRepository
 
 if __name__ == "__main__":
+    load_dotenv()
+    log_dir = os.getenv("COLLECT_LOG_DIR")
     
     config = {
         "version": 1,
@@ -27,7 +29,7 @@ if __name__ == "__main__":
             "file": {
                 "formatter": "default",
                 "class": logging.FileHandler,
-                "filename": 'logs/realtime-collect-process.log',
+                "filename": f'{log_dir}/realtime-collect-process.log',
             }
         },
         "loggers": {
@@ -65,25 +67,25 @@ if __name__ == "__main__":
                      
         Before executing process, logging git version using hash and date
     """
-    result = subprocess.run("git status -s".split(), capture_output = True)
-    if len(result.stdout.decode()) > 0: 
-        raise Exception(f"There are not committed Files\nCurrent directory:{os.getcwd()}\n{result.stdout.decode()}")
+    # result = subprocess.run("git status -s".split(), capture_output = True)
+    # if len(result.stdout.decode()) > 0: 
+    #     raise Exception(f"There are not committed Files\nCurrent directory:{os.getcwd()}\n{result.stdout.decode()}")
     
-    # Get git hash and commit date from "git log -n 1" command
-    result = subprocess.run("git log -n 1".split(), capture_output = True)
-    result_parse = result.stdout.decode().split("\n")
-    version = result_parse[0].split()[1] # git hash
-    commit_date = result_parse[2] # commit date
+    # # Get git hash and commit date from "git log -n 1" command
+    # result = subprocess.run("git log -n 1".split(), capture_output = True)
+    # result_parse = result.stdout.decode().split("\n")
+    # version = result_parse[0].split()[1] # git hash
+    # commit_date = result_parse[2] # commit date
     
-    # Start process
-    logging.info(
-        f"""
-        Start realtime collect worker... PID: {os.getpid()}
-        Version: {f"{version}"}
-        Commit date: {commit_date}
-        """)
+    # # Start process
+    # logging.info(
+    #     f"""
+    #     Start realtime collect worker... PID: {os.getpid()}
+    #     Version: {f"{version}"}
+    #     Commit date: {commit_date}
+    #     """)
     
-    load_dotenv()
+    
     db_url = os.getenv("SQLITE_REALTIME_DB_URL")
     address = os.getenv("COLLECT_TRANSFORM_ADDRESS")
     
