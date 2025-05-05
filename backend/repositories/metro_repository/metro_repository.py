@@ -11,6 +11,12 @@ class MetroRepository(ABC):
         pass
     
     @abstractmethod
+    def override_csv(self, file_path: str, table_model):
+        """ Override csv file to table
+        """
+        pass
+    
+    @abstractmethod
     def find_stations_searchbar(self) -> list[dict]:
         """Get all searchbar station
 

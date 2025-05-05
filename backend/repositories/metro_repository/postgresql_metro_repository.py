@@ -1,8 +1,11 @@
 
-from sqlalchemy import create_engine, text
+import io
+
+from sqlalchemy import create_engine, text, delete
 from sqlalchemy.orm import Session
 
 from repositories.metro_repository.metro_repository import MetroRepository
+from model.sqlalchemy_model import Base
 from model.pydantic_model import StationSearchbarList, StationInfo, Station, Line, TransferLine, AdjacentStation
 
 class PostgresqlMetroRepository(MetroRepository):
@@ -13,6 +16,21 @@ class PostgresqlMetroRepository(MetroRepository):
         
     def dispose(self):
         self.engine.dispose()
+        
+    def override_csv(self, file_path: str, table_model: Base):
+        buffer = io.StringIO(open(file_path).read())
+        Base.metadata.create_all(self.engine)
+        with Session(self.engine) as session:
+            # Clear table
+            session.execute(delete(table_model))
+            cursor = session.connection().connection.cursor()
+            columns = buffer.readline()
+            # Insert table
+            cursor.copy_expert(
+                f"COPY {table_model.__tablename__} ({columns}) FROM STDIN WITH CSV",
+                buffer
+            )
+            session.commit()
         
     def find_stations_searchbar(self) -> list[StationSearchbarList]:
         with Session(self.engine) as session:
