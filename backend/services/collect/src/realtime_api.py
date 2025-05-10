@@ -100,27 +100,4 @@ class RealtimeAPI:
 
 
 if __name__ == "__main__":
-    import time
-    
-    ri = RealtimeInformation()
-    line_names = [
-        "1호선", "2호선", "3호선", "4호선", "5호선", "6호선", "7호선", "8호선", "9호선",
-        "GTX-A", "경의중앙선", "공항철도", "경춘선", "수인분당선", 
-        "신분당선", "경강선", "우이신설선", "서해선", "신림선"
-    ]
-    
-    start = time.time()
-    for line_name in line_names:
-        url = ri.get_url("realtimePosition", line_name)
-        response = requests.get(url)
-        data = ri.parse_response(response)
-    print(f"Without session: {time.time() - start:.5f}s...")
-    
-    
-    start = time.time()
-    with requests.session() as session:
-        for line_name in line_names:
-            url = ri.get_url("realtimePosition", line_name)
-            response = session.get(url, timeout=2)
-            data = ri.parse_response(response)
-    print(f"With session: {time.time() - start:.5f}s...")
+    pass
