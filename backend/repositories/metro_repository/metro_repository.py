@@ -11,8 +11,8 @@ class MetroRepository(ABC):
         pass
     
     @abstractmethod
-    def override_csv(self, file_path: str, table_model):
-        """ Override csv file to table
+    def overwrite_csv(self, file_path: str, table_model):
+        """ Overwrite csv file to table
         """
         pass
     

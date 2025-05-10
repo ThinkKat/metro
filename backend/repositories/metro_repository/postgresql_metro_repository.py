@@ -17,7 +17,7 @@ class PostgresqlMetroRepository(MetroRepository):
     def dispose(self):
         self.engine.dispose()
         
-    def override_csv(self, file_path: str, table_model: Base):
+    def overwrite_csv(self, file_path: str, table_model: Base):
         buffer = io.StringIO(open(file_path).read())
         Base.metadata.create_all(self.engine)
         with Session(self.engine) as session:
