@@ -2,7 +2,7 @@
 fastapi==0.115.12
 holidays==0.71
 pandas==2.2.3
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
 pydantic==2.11.4
 python-dotenv==1.1.0
 requests==2.32.3
