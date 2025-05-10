@@ -17,3 +17,5 @@
 web_server/
 **/mount/
 compose.yaml
+**/*.txt
+**/scripts/*.py
