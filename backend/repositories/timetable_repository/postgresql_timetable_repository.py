@@ -73,9 +73,8 @@ class PostgresqlTimetableRepository(TimetableRepository):
                             *,
                             CAST(EXTRACT(HOUR FROM t.department_time) AS INT) AS hour,
                             CAST(EXTRACT(MINUTE FROM t.department_time) AS INT) AS minute
-                        FROM timetables t
+                        FROM timetables_with_delay_stat t
                         WHERE t.station_public_code = :station_public_code
-                        AND (t.updated_at <= :op_date AND (t.end_date > :op_date OR t.end_date IS NULL))
                     ) stb
                     LEFT JOIN stations s
                     ON stb.station_public_code = s.station_public_code
@@ -109,7 +108,7 @@ if __name__ == "__main__":
     from sqlalchemy import create_engine
 
     load_dotenv()
-    db_url = os.getenv("POSTGRESQL_METRO_DB_URL")
+    db_url = os.getenv("POSTGRESQL_METRO_DB_URL_LOCAL")
     
     repository = PostgresqlTimetableRepository()
     repository.create_engine(db_url)
@@ -125,3 +124,4 @@ if __name__ == "__main__":
     # print(data)
     print(f"find_timetable_by_station_public_code Execution time: {time.time() - start_time} seconds")
     repository.dispose()
+   

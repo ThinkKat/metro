@@ -11,7 +11,7 @@ class TimetableRepository(ABC):
         pass
     
     @abstractmethod
-    def find_timetable_for_calculation_delay(self, op_date: str) -> list[dict]:
+    def find_timetable_for_calculation_delay(self, op_date: str, day_code: int) -> list[dict]:
         """Query timetable information for calculation delay.
         This method is used to find timetable information for calculation delay.
         It will return all timetable information that is valid for the given operation date.

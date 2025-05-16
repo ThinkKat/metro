@@ -85,6 +85,33 @@ class Timetables(Base):
         PrimaryKeyConstraint('line_id', 'train_id', 'station_public_code', 'day_code', "stop_no", "updated_at"),
     )
     
+class TimetablesWithDelayStat(Base):
+    __tablename__ = "timetables_with_delay_stat"
+    
+    line_id = Column(Integer, nullable=False)
+    train_id = Column(String(10), nullable=False)
+    first_station_name = Column(String(20), nullable = False)
+    last_station_name = Column(String(20), nullable = False)
+    first_last = Column(Integer, nullable = False)
+    station_public_code = Column(String(10), nullable=False)
+    day_code = Column(Integer, nullable=False)
+    up_down = Column(Boolean, nullable=False)
+    express = Column(Boolean, nullable=False)
+    arrival_time = Column(Time)
+    department_time = Column(Time)
+    updated_at = Column(Date, nullable=False)
+    end_date = Column(Date)
+    realtime_train_id = Column(String(10), nullable=False)
+    stop_no = Column(Integer, nullable=False)
+    express_non_stop = Column(Boolean, nullable=False)
+    mean_delayed_time = Column(Float)
+    cnt_over_300s_delay = Column(Integer)
+    
+    
+    __table_args__ = (
+        PrimaryKeyConstraint('line_id', 'train_id', 'station_public_code', 'day_code', "stop_no", "updated_at"),
+    )
+    
 
 class MockRealtime(Base):
     __tablename__ = "test_realtimes"
@@ -124,11 +151,28 @@ class Delay(Base):
     train_status = Column(Integer, nullable=False)
     requested_at = Column(TIMESTAMP, nullable=False)
     day_code = Column(Integer, nullable=False)
-    first_last = Column(Integer, nullable=True)
+    first_last = Column(Integer, nullable=True) # Nullable
     stop_no = Column(Integer, nullable=False)
     op_date = Column(Date, nullable=False)
     delayed_time = Column(Float)
 
     __table_args__ = (
         PrimaryKeyConstraint('line_id', 'station_id', 'train_id', 'train_status', 'stop_no' ,'op_date'),
+    )
+    
+class Recent7DaysDelayStat(Base):
+    __tablename__ = "recent_7days_delay_stat"
+    
+    line_id = Column(Integer, nullable=False)
+    station_public_code = Column(String(10), nullable=False)
+    station_id = Column(Integer, nullable=False)
+    train_id = Column(String(10), nullable=False)
+    train_status = Column(Integer, nullable=False)
+    day_code = Column(Integer, nullable=False)
+    stop_no = Column(Integer, nullable=False)
+    mean_delayed_time = Column(Float)
+    cnt_over_300s_delay = Column(Integer)
+
+    __table_args__ = (
+        PrimaryKeyConstraint('line_id', 'station_public_code', 'train_id', 'train_status', 'day_code' ,'stop_no'),
     )

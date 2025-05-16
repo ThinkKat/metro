@@ -105,6 +105,8 @@ class TimetableRow(BaseModel):
     express: int  # 0 = 일반, 1 = 급행
     sort_hour_key: int
     sort_minute_key: int
+    mean_delayed_time: Optional[float] = None
+    cnt_over_300s_delay: Optional[int] = None
 
 # The data model of timetable info of a station
 # This model is divided into left and right.

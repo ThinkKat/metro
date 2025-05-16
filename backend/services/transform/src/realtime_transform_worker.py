@@ -66,13 +66,20 @@ class RealtimeTransformWorker:
                         
                         # Delete realtimes
                         self.realtime_repository.remove_realtimes()
-                        continue
+                        
+                        # Start to manage delay data
+                        
+                        # End to manage delay data
+                        
+                        # Start to update the latest timetable
+                        
+                        # End to update the latest timetable
+                        
                     
                     # position_data == 1 means that the collect loop is started. 
                     elif isinstance(position_data, int) and position_data == 1:
                         logger.info("Loop is started")
                         self.realtime_transform.init()
-                        continue
                     
                     else:
                         # Process data
@@ -96,6 +103,10 @@ class RealtimeTransformWorker:
                     
             except Exception:
                 logger.error(traceback.format_exc())
+                logger.error("Position")
+                logger.error(data["position"].to_dict(orient="records"))
+                logger.error("Arrival")
+                logger.error(data["arrival_all"].to_dict(orient="records"))
     
     def check_is_alive(self):
         return self.t is not None and self.t.is_alive()

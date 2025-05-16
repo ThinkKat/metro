@@ -38,9 +38,6 @@ class RealtimeTransform:
         logger.info("Initialize realtime data, operational date, and timetable data")
     
     def init_data(self):
-        """
-        TODO: Divide to communication handler
-        """
         # Realtime Positon data
         self.realtime_position: dict[int, RealtimePosition] = {}
         # Realtime Arrival data
@@ -74,9 +71,7 @@ class RealtimeTransform:
         return tb
     
     def _process_arrival_all_data(self, data: list[dict]) -> dict[int, list]:
-        """
-            Transform arrival data
-        """
+        """Transform arrival data"""
         # New data hashmap
         data_hashmap: dict[int, list] = {}
         for row in data:
@@ -136,10 +131,7 @@ class RealtimeTransform:
         return data_hashmap
     
     def _calculate_delay_time(self, realtime_position: pd.DataFrame) -> pd.DataFrame:
-        """
-            Calculate delay time
-            TODO: Compare to Delay Calculator
-        """
+        """Calculate delay time"""
         
         # Data join
         data_join = pd.merge(

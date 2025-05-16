@@ -3,7 +3,7 @@ import io
 from sqlalchemy import create_engine, text, insert
 from sqlalchemy.orm import Session
 
-from model.sqlalchemy_model import Delay
+from model.sqlalchemy_model import Base, Delay
 
 from repositories.delay_repository.delay_repository import DelayRepository
 
@@ -15,6 +15,15 @@ class PostgresqlDelayRepository(DelayRepository):
         
     def dispose(self):
         self.engine.dispose()
+        
+    def create_table_all(self):
+        Base.metadata.create_all(self.engine)
+                
+    def execute(self, query: str, params: dict|None = None):
+        with Session(self.engine) as session:
+            response = session.execute(text(query), params)
+            session.commit()
+            return response
         
     def insert_delay_all(self, data: list[dict]):
         with Session(self.engine) as session:
@@ -50,6 +59,7 @@ class PostgresqlDelayRepository(DelayRepository):
                 data.extend([{c:r[i] for i, c in enumerate(columns)} for r in row])
                 row = response.fetchmany(size)
         return data
+    
             
 if __name__ == "__main__":
     """

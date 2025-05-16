@@ -17,10 +17,12 @@ from google.cloud import storage
 class GCSGateway:
     def __init__(self):
         self.client = storage.Client()
+        self.bucket_name = None
         self.bucket = None
         
     def connect_bucket(self, bucket_name: str):
         """Connect the bucket"""
+        self.bucket_name = bucket_name
         self.bucket = self.client.bucket(bucket_name)
         
     def get_blob(self, blob_name: str):
@@ -57,7 +59,7 @@ class GCSGateway:
         storage_client = storage.Client()
 
         # Note: Client.list_blobs requires at least package version 1.17.0.
-        blobs = self.client.list_blobs(bucket_name, prefix=prefix, delimiter=delimiter)
+        blobs = self.client.list_blobs(self.bucket_name, prefix=prefix, delimiter=delimiter)
         
         # Get all blob name in a specific prefix
         blob_list = [blob.name for blob in blobs] + [prefix for prefix in blobs.prefixes]
@@ -75,7 +77,7 @@ class GCSGateway:
         Returns:
             bool: Return the flag whether path exists.
         """
-        blob_list = self.list_blobs_with_prefix(dir, "/") 
+        blob_list = self.list_blobs_with_prefix("") 
         return path in blob_list
         
     def upload_blob(self, source_file_name: str, destination_blob_name: str):
@@ -94,10 +96,13 @@ class GCSGateway:
 
             blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
 
-    def download_blob(self, source_blob_name: str, destination_file_name: str):
+    def download_blob(self, source_blob_name: str, destination_file:str|None = None):
         """Downloads a blob from the bucket."""
         blob = self.bucket.blob(source_blob_name)
-        blob.download_to_filename(destination_file_name)
+        if destination_file:
+            blob.download_to_filename(destination_file_name)
+        else:
+            return blob.download_as_bytes()
 
     def delete_blob(self, blob_name: str):
         """Deletes a blob from the bucket."""
