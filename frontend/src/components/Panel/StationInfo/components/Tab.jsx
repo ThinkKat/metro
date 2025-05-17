@@ -7,6 +7,8 @@ const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshTime, setRefershTime] = useState('');
     const [additionalInfoOpen, setAdditionalInfoOpen] = useState(false);
+    const [hoveredIndex, setHoveredIndex] = useState(null);
+
     const REFRESH_INTERVAL = 13000; // 13초
 
     // Refreshing
@@ -45,7 +47,7 @@ const Tab = ({ tab, stationInformation, realtimeData, setRealtimeData }) => {
     return (
         tab === "realTime" 
         ? <ArrivalInfo isRefreshing={isRefreshing} refreshTime={refreshTime} onClick={handleRealtimeRefresh} stationInformation={stationInformation} realtimeData={realtimeData} additionalInfoOpen={additionalInfoOpen} setAdditionalInfoOpen={setAdditionalInfoOpen}/>
-        : <TimetableInfo selectedDay={selectedDay} setSelectedDay={setSelectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} setAdditionalInfoOpen={setAdditionalInfoOpen}/>
+        : <TimetableInfo selectedDay={selectedDay} setSelectedDay={setSelectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} setAdditionalInfoOpen={setAdditionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
     );
 }
 
@@ -147,10 +149,11 @@ const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
                     const expArrTime = new Date(arrival.expected_arrival_time);
                     const expArrTimeStr = `${expArrTime.getHours().toString().padStart(2,'0')}:${expArrTime.getMinutes().toString().padStart(2,'0')}`
                     const delayedTime = (arrival.current_delayed_time && arrival.current_delayed_time > 0) && `약 ${parseInt(arrival.current_delayed_time/60)}분 ${parseInt(arrival.current_delayed_time%60)}초 지연`
-
+                    var isDelayed = (arrival.delayedTime !== null && arrival.delayedTime >= 300);
                     return (
                         <div className = 'data-item-container'>
-                            <div className="data-item" key={index}>
+                            <div className={"data-item" `${isDelayed ? 'danger' : ''}`}
+                                key={index}>
                                 <span className="direction">{arrival.last_station_name}</span>
                                 <span className="time">{arrival.information_message.replace(/\[(\d+)\]/, "$1").replace(/\(.*\)/, "")}</span>
                             </div>
@@ -196,7 +199,7 @@ const TimetableDayButton = ({day, selectedDay, setSelectedDay}) => {
     );
 };
 
-const TimetableInfo = ({selectedDay, setSelectedDay, stationInformation, additionalInfoOpen, setAdditionalInfoOpen}) => {
+const TimetableInfo = ({selectedDay, setSelectedDay, stationInformation, additionalInfoOpen, setAdditionalInfoOpen, hoveredIndex, setHoveredIndex}) => {
     return (
         <div className="tab-info">
             <div className='sticky-header'>
@@ -211,47 +214,63 @@ const TimetableInfo = ({selectedDay, setSelectedDay, stationInformation, additio
                 </div>
                 <AdjacentStationDirection stationInformation={stationInformation}/>
             </div>
-            <TimetableListsContainer selectedDay={selectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
+            <TimetableListsContainer selectedDay={selectedDay} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
         </div>
     );
 };
 
-const TimetableListsContainer = ({selectedDay, stationInformation, additionalInfoOpen}) => {
+const TimetableListsContainer = ({selectedDay, stationInformation, additionalInfoOpen, hoveredIndex, setHoveredIndex}) => {
     return (
         selectedDay == "weekday" ?
         <div className="lists-container timetable">
-            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
-            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
+            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
+            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
         </div> :
         <div className="lists-container timetable">
-            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
-            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen}/>
+            <TimetableList selectedDay={selectedDay} direction={"left"}  stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
+            <TimetableList selectedDay={selectedDay} direction={"right"} stationInformation={stationInformation} additionalInfoOpen={additionalInfoOpen} hoveredIndex={hoveredIndex} setHoveredIndex={setHoveredIndex}/>
         </div>
     );
 };
 
-const TimetableList = ({selectedDay, stationInformation, direction, additionalInfoOpen}) => {
+const TimetableList = ({selectedDay, stationInformation, direction, additionalInfoOpen, hoveredIndex, setHoveredIndex}) => {
     return (
         <div className={`data-list timetable ${direction}`}>
             {
                 stationInformation.timetables[selectedDay][direction]
                 .filter((timetable) => timetable.department_time !== null)
-                .map((timetable, index) => (
-                    <div className = 'data-item-container'>
-                        <div className="data-item" key={index}>
-                            <span className="time">{timetable.last_station_name}</span>
-                            <span className="direction">{timetable.department_time.replace(/(\d{2}):(\d{2}):(\d{2})/, '$1:$2')}</span>
+                .map((timetable, index) => {
+                    var isDelayed = ((timetable.cnt_over_300s_delay !== null && timetable.cnt_over_300s_delay >= 4) ||
+                                (timetable.mean_delayed_time !== null && timetable.mean_delayed_time >= 300) );
+                    return (
+                        <div className = {`data-item-container ${
+                                isDelayed ? 'danger' : ''}`}
+                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            >
+                            <div className="data-item" key={index}>
+                                <span className="time">{timetable.last_station_name}</span>
+                                <span>
+                                    <span className="direction">{timetable.department_time.replace(/(\d{2}):(\d{2}):(\d{2})/, '$1:$2')}</span>
+                                </span>
+                            </div>
+                            {
+                                additionalInfoOpen && (
+                                    <div>
+                                        <div className='train-id'>열차번호 {timetable.train_id}</div>
+                                    </div>
+                                )
+                            }
+                            {
+                                (isDelayed && hoveredIndex === index) && (
+                                    <div className="popup">
+                                        🚨 지연이 잦은 열차
+                                    </div>
+                                )
+                            }
                         </div>
-                        {
-                            additionalInfoOpen && (
-                                <div>
-                                    <div className='train-id'>열차번호 {timetable.train_id}</div>
-                                </div>
-                            )
-                        }
-                        
-                    </div>
-                ))
+                    )
+                })
             }
         </div>
     );
