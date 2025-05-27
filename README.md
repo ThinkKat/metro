@@ -8,6 +8,10 @@ Korea Seoul metro web service that provides live information with delay time.
 Check this site:
 https://metronow.info
 
+## 개발 및 운영 기간
+개발: 2024.08 ~ 2025.02
+운영 및 개선: 2025.02 ~ 현재 운영중 
+
 ## 핵심기능
 
 실시간 지하철 지연정보를 제공하는 서비스입니다.
