@@ -13,6 +13,8 @@ assets/csv
 assets/db
 assets/logs
 assets/tmp
+backend/assets
+frontend/src/assets
 **/conf
 **/tmp
 **/metro_information
