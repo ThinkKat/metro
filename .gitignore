@@ -9,7 +9,10 @@
 **/logs
 **/*.log
 **/*.csv
-**/assets
+assets/csv
+assets/db
+assets/logs
+assets/tmp
 **/conf
 **/tmp
 **/metro_information
