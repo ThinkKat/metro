@@ -13,7 +13,7 @@ from utils.utils import op_date, check_holiday, is_next_date
 logger = logging.getLogger("realtime_transform")
 
 class RealtimeTransform:
-    def __init__(self, timetable_repository: TimetableRepository):
+    def __init__(self, timetable_repository: TimetableRepository, arrival_line: list):
         self.timetable_repository = timetable_repository
         
         # To convert train status code 
@@ -21,7 +21,7 @@ class RealtimeTransform:
             0: "진입", 1: "도착", 2: "출발", 3: "전역출발", 4: "전역진입", 5: "전역도착", 99: "운행중"}
         
         # Arrival line - Environment variable
-        self.arrival_line = [1077]
+        self.arrival_line = arrival_line
         
         # Set data, op_date, timetable data
         self.init()
@@ -249,9 +249,6 @@ class RealtimeTransform:
             # Convert Type
             position_data["received_at"] = position_data["received_at"].astype("string")
             
-            delay: pd.DataFrame = self._calculate_delay_time(position_data)
-            arrival: pd.DataFrame = self._calculate_arrival_data(delay)
-            
             # Realtime Position Data
             realtime_position_by_line_id = {}
             for d in position_data.to_dict(orient="records"):
@@ -260,28 +257,37 @@ class RealtimeTransform:
                     realtime_position_by_line_id[line_id] = [d]
                 else:
                     realtime_position_by_line_id[line_id].append(d)
+            
+            # Update position data
             self.realtime_position = {
                 k:RealtimePosition(place = [RealtimePositionRow(**v) for v in values]) for k, values in realtime_position_by_line_id.items()
             }
-        
-        if arrival_data is not None:
-            arrival_hashmap: dict[int, list] = self._process_arrival_all_data(arrival_data)
-            # Add arrival data
-            for d in arrival.to_dict(orient="records"):
-                if not d["line_id"] in self.arrival_line:
-                    station_id = d["searched_station_id"]
-                    d["train_status"] = self.train_status[d["train_status"]]
-                    if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
-                    d["information_message"] = str(int(d["stop_order_diff"])) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
-                    
-                    if station_id not in arrival_hashmap:
-                        arrival_hashmap[station_id] = [d]
-                    else:
-                        arrival_hashmap[station_id].append(d)
             
-            self.arrival_hashmap = {
-                k:[RealtimeArrivalRow(**v) for v in values] for k, values in arrival_hashmap.items()
-            }
+            # Calculate delay time    
+            delay: pd.DataFrame = self._calculate_delay_time(position_data)
+            # Create arrival information
+            arrival: pd.DataFrame = self._calculate_arrival_data(delay)
+            
+        if arrival_data is not None:
+            # Create arrival hashmap 
+            arrival_hashmap: dict[int, list] = self._process_arrival_all_data(arrival_data)
+            
+        # Add arrival data
+        for d in arrival.to_dict(orient="records"):
+            if not d["line_id"] in self.arrival_line:
+                station_id = d["searched_station_id"]
+                d["train_status"] = self.train_status[d["train_status"]]
+                if pd.isna(d["current_delayed_time"]): d["current_delayed_time"] = None
+                d["information_message"] = str(int(d["stop_order_diff"])) + "전역 " + d["train_status"] if d["stop_order_diff"] >= 1 else "당역 " + d["train_status"]
+                
+                if station_id not in arrival_hashmap:
+                    arrival_hashmap[station_id] = [d]
+                else:
+                    arrival_hashmap[station_id].append(d)
+        
+        self.arrival_hashmap = {
+            k:[RealtimeArrivalRow(**v) for v in values] for k, values in arrival_hashmap.items()
+        }
         
     def get_data_by_station_id(self, station_id: int, up: str, down: str) -> RealtimeArrival:
         """Get arrival data by station_id 

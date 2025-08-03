@@ -17,7 +17,7 @@ class RealtimeRepository(ABC):
         pass
     
     @abstractmethod
-    def remove_realtimes(self):
+    def remove_realtimes(self, op_date: str):
         """ Remove all data from realtime data
         """
         pass

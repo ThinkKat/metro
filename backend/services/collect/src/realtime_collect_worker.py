@@ -49,7 +49,8 @@ class RealtimeCollectWorker:
             self.run_loop = self.check_time()
             if self.run_loop:
                 try:
-                    # Process data
+                    # Collect data
+                    start = time.time()
                     realtime_collect.collect_realtime_data()
                     
                     # Send data
@@ -59,7 +60,7 @@ class RealtimeCollectWorker:
                             "arrival_all": realtime_collect.realtime_arrival_all
                         }
                     )
-                    
+                    logger.debug(f"Take {time.time() - start:.5f}s from collect to send.")
                     data = realtime_collect.realtime_position
                     data["received_at"] = pd.to_datetime(data["received_at"], format="%Y-%m-%d %H:%M:%S")
                     data["requested_at"] = pd.to_datetime(data["requested_at"], format="%Y-%m-%d %H:%M:%S")
@@ -73,6 +74,7 @@ class RealtimeCollectWorker:
                     logger.debug(f"Success to insert to db. The rows of data is {len(save_data)}")
                 except Exception:
                     logger.error(traceback.format_exc())
+                    logger.error(save_data)
                 
                 # TODO: After the listener is connected, interrupt time.sleep
                 time.sleep(self.interval)

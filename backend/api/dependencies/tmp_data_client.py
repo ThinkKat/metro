@@ -18,6 +18,8 @@ ct_address = os.getenv("COLLECT_TRANSFORM_ADDRESS")
 metro_db_url = os.getenv("POSTGRESQL_METRO_DB_URL")
 realtime_db_url = os.getenv("SQLITE_REALTIME_DB_URL")
 
+arrival_line = list(map(int, os.getenv("ARRIVAL_LINE").split(",")))
+
 ipc_listener = IPCListener(tc_address)
 ipc_client = IPCClient(ct_address)
 
@@ -36,7 +38,8 @@ realtime_transform_worker = RealtimeTransformWorker(
     ipc_client,
     postgresql_timetable_repository, 
     postgresql_delay_repository, 
-    sqlite_realtime_repository
+    sqlite_realtime_repository,
+    arrival_line
 )
 realtime_transform_worker.start()
 

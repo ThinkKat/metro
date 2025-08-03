@@ -22,14 +22,16 @@ class RealtimeTransformWorker:
                  client, 
                  timetable_repoitory: TimetableRepository,
                  delay_repository: DelayRepository, 
-                 realtime_repository: RealtimeRepository):
+                 realtime_repository: RealtimeRepository,
+                 arrival_line: list):
         
         self.delay_repository = delay_repository
         self.realtime_repository = realtime_repository
         
         self.listener = listener
         self.client = client
-        self.realtime_transform = RealtimeTransform(timetable_repoitory)
+        
+        self.realtime_transform = RealtimeTransform(timetable_repoitory, arrival_line)
         self.t = None
         
     def interval_work(self):
@@ -38,10 +40,11 @@ class RealtimeTransformWorker:
         while True:
             try:                            
                 try:
+                   
                     data = self.client.recv()
                     position_data = data["position"]
                     realtime_arrival_all = data["arrival_all"]
-                    
+                
                     # position_data == 0 means that the collect loop is stalled. 
                     if isinstance(position_data, int) and position_data == 0:
                         logger.info("Loop is terminated")
@@ -65,7 +68,7 @@ class RealtimeTransformWorker:
                         logger.info("Success to insert delay data")
                         
                         # Delete realtimes
-                        self.realtime_repository.remove_realtimes()
+                        self.realtime_repository.remove_realtimes(self.realtime_transform.op_d_str)
                         
                         # Start to manage delay data
                         
@@ -82,14 +85,21 @@ class RealtimeTransformWorker:
                         self.realtime_transform.init()
                     
                     else:
+                        logger.debug(f"Before transform: position: {len(position_data)}, arrival_all: {len(realtime_arrival_all)}")
+                        start = time.time()
+                    
                         # Process data
                         self.realtime_transform.process_realtime_data(position_data, realtime_arrival_all)
+                        # Set data
                         self.listener.set_data(
                             {
                                 "position": self.realtime_transform.realtime_position,
                                 "arrival": self.realtime_transform.arrival_hashmap
                             }
                         )
+                        logger.debug(f"Data transform takes {time.time() - start:.05f}s until receiving dataset from collect. \n \
+                                    Dataset size : Postiion: {len(self.realtime_transform.realtime_position)}  / Arrival: {len(self.realtime_transform.arrival_hashmap)} {sum([len(v) for k, v in self.realtime_transform.arrival_hashmap.items()])}")
+                        
                 except Exception:
                     logger.info("Client is not connected. Try to connect to listener...")
                     logger.error(traceback.format_exc())
@@ -100,7 +110,7 @@ class RealtimeTransformWorker:
                         logger.info("Failed to connect. Reset data.")
                         # Reset data
                         self.realtime_transform.init_data()
-                    
+            
             except Exception:
                 logger.error(traceback.format_exc())
                 logger.error("Position")

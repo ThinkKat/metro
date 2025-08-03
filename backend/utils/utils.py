@@ -1,11 +1,19 @@
+import os
+from dotenv import load_dotenv
+
 import holidays
 from datetime import date, datetime, timedelta
 
+load_dotenv()
+
 def op_date(datetime_: datetime = datetime.now()) -> date:
-    return (datetime_ - timedelta(hours = 4, minutes = 50)).date()
+    # Metro operational hours: START_TIME - tomorrow END_TIME
+    start_time = os.getenv("START_TIME")
+    start_hour = int(start_time[0:2])
+    start_minute = int(start_time[3:5])
+    return (datetime_ - timedelta(hours = start_hour, minutes = start_minute)).date()
     
 def check_holiday(date_: date | str) -> bool:
-    # Metro operational hours: 04:50 - tomorrow 02:00
     if isinstance(date_, str):
         date_ = datetime.strptime(date_, "%Y-%m-%d")
     holiday_kr = holidays.KR(years = date_.year, language = "ko")

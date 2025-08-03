@@ -32,10 +32,10 @@ class SqliteRealtimeRepository(RealtimeRepository):
             ]
         return data
     
-    def remove_realtimes(self):
+    def remove_realtimes(self, op_date: str):
         with Session(self.engine) as session:
-            delete_stmt = text("DELETE FROM realtimes")
-            session.execute(delete_stmt)
+            delete_stmt = text("DELETE FROM realtimes WHERE DATE(requested_at, '-04:50:00') = :op_date")
+            session.execute(delete_stmt, {"op_date":op_date})
             session.commit()
             
     def upsert_realtimes(self, data: list[dict]):
