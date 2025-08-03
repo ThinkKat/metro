@@ -151,9 +151,8 @@ const ArrivalList = ({direction, realtimeData, additionalInfoOpen}) => {
                     const delayedTime = (arrival.current_delayed_time && arrival.current_delayed_time > 0) && `약 ${parseInt(arrival.current_delayed_time/60)}분 ${parseInt(arrival.current_delayed_time%60)}초 지연`
                     var isDelayed = (arrival.delayedTime !== null && arrival.delayedTime >= 300);
                     return (
-                        <div className = 'data-item-container'>
-                            <div className={"data-item" `${isDelayed ? 'danger' : ''}`}
-                                key={index}>
+                        <div className = {`data-item-container ${ isDelayed ? 'danger' : ''}`}>
+                            <div className= "data-item" key={index}>
                                 <span className="direction">{arrival.last_station_name}</span>
                                 <span className="time">{arrival.information_message.replace(/\[(\d+)\]/, "$1").replace(/\(.*\)/, "")}</span>
                             </div>

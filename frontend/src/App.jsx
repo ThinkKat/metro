@@ -13,7 +13,7 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <h1>수도권 전철 노선도</h1>
+          <h1>실시간 지하철 지연시간</h1>
         </div>
       </header>
       <main className="app-main">
